@@ -5,5 +5,7 @@ config({ path: ".env.local" });
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  seed: "tsx prisma/seed.ts",
+  migrations: {
+    seed: "tsx --env-file=.env prisma/seed.ts",
+  },
 });

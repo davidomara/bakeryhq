@@ -5,9 +5,9 @@ import { requireTeamContext } from "@/lib/auth/team";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { teamId: string; weddingId: string } }
+  { params }: { params: Promise<{ teamId: string; weddingId: string }> }
 ) {
-  const { teamId, weddingId } = params;
+  const { teamId, weddingId } = await params;
   await requireTeamContext(teamId);
 
   const costing = await prisma.weddingCosting.findFirst({

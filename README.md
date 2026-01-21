@@ -54,10 +54,36 @@ A production-ready bakery costing and profit tracking app built on the Stack Aut
     npm run dev 
     ```
 
+## Prisma Studio
+
+```bash
+npx prisma studio
+```
+
 ## Tests
 
 ```bash
 npm run test
+```
+
+## Pricing Terms
+
+- Markup (bps): percentage markup on total cost. 100 bps = 1%.
+- Target profit (UGX): absolute profit added to total cost.
+- Target margin (bps): desired margin on selling price (100 bps = 1%).
+- Pricing mode: which pricing input you intend to use.
+- Auto recommended: highest valid price from the inputs above.
+
+## Useful Commands
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npx prisma db push
+npx prisma studio
+npm run test
+npm run dev
 ```
 
 ## Features & Tech Stack

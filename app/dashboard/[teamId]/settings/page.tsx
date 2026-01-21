@@ -4,9 +4,9 @@ import { SettingsPageClient } from "@/app/dashboard/[teamId]/settings/page-clien
 export default async function SettingsPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }>;
 }) {
-  const { teamId } = params;
+  const { teamId } = await params;
   const settings = await getTeamSettings(teamId);
 
   return <SettingsPageClient teamId={teamId} initialSettings={settings} />;

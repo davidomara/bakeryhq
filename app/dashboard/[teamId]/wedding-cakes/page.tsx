@@ -4,9 +4,9 @@ import { listProductCostingOptions, listWeddingCostings } from "@/app/dashboard/
 export default async function WeddingCakesPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }>;
 }) {
-  const { teamId } = params;
+  const { teamId } = await params;
   const [costings, productOptions] = await Promise.all([
     listWeddingCostings(teamId),
     listProductCostingOptions(teamId),

@@ -274,9 +274,15 @@ export function WeddingCakesPageClient({
 
         <div className="space-y-3 rounded-lg border p-4">
           <h2 className="text-lg font-semibold">Pricing</h2>
+          <p className="text-xs text-muted-foreground">
+            Choose markup, target profit, or target margin. Auto recommended shows the highest
+            valid price for quick quotes.
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium">Markup (bps)</label>
+              <label className="text-sm font-medium">
+                Markup (bps) <span className="text-xs text-muted-foreground">%</span>
+              </label>
               <Input
                 type="number"
                 value={draft.markupBps ?? ""}
@@ -294,7 +300,9 @@ export function WeddingCakesPageClient({
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Target margin (bps)</label>
+              <label className="text-sm font-medium">
+                Target margin (bps) <span className="text-xs text-muted-foreground">%</span>
+              </label>
               <Input
                 type="number"
                 value={draft.targetMarginBps ?? ""}

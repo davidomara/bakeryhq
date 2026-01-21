@@ -4,6 +4,7 @@ import SidebarLayout, { SidebarItem } from "@/components/sidebar-layout";
 import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
 import { CakeSlice, ClipboardList, LineChart, Settings2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const navigationItems: SidebarItem[] = [
   {
@@ -49,11 +50,17 @@ const navigationItems: SidebarItem[] = [
 export default function Layout(props: { children: React.ReactNode }) {
   const params = useParams<{ teamId: string }>();
   const user = useUser({ or: 'redirect' });
+  const teams = user.useTeams();
   const team = user.useTeam(params.teamId);
   const router = useRouter();
 
+  useEffect(() => {
+    if (teams.length > 0 && !team) {
+      router.push('/dashboard');
+    }
+  }, [teams.length, team, router]);
+
   if (!team) {
-    router.push('/dashboard');
     return null;
   }
 

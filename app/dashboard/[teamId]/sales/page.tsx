@@ -4,9 +4,9 @@ import { listProductCostingOptions, listSalesData } from "@/app/dashboard/[teamI
 export default async function SalesPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }>;
 }) {
-  const { teamId } = params;
+  const { teamId } = await params;
   const [products, data] = await Promise.all([
     listProductCostingOptions(teamId),
     listSalesData(teamId, {}),

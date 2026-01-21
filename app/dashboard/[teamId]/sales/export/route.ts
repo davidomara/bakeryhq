@@ -5,9 +5,9 @@ import { requireTeamContext } from "@/lib/auth/team";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
-  const { teamId } = params;
+  const { teamId } = await params;
   await requireTeamContext(teamId);
 
   const { searchParams } = new URL(request.url);

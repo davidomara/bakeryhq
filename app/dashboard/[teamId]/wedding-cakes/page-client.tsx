@@ -11,7 +11,7 @@ const defaultTier = () => ({
   id: newRowId(),
   name: "",
   servings: null as number | null,
-  flavor: "",
+  flavor: "" as string | null,
   linkedProductCostingId: null as string | null,
   manualTierCostUGX: null as number | null,
 });

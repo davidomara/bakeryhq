@@ -6,9 +6,31 @@ import { Input } from "@/components/ui/input";
 import { listSalesData, upsertSalesEntry } from "@/app/dashboard/[teamId]/sales/actions";
 import { salesEntryInputSchema } from "@/lib/costing/schema";
 
-const emptyEntry = () => ({
+type ProductOption = {
+  id: string;
+  name: string;
+  costPerUnitUGX: number | null;
+};
+
+type SalesEntry = {
+  id?: string;
+  date: string;
+  productCostingId: string | null;
+  productNameSnapshot: string;
+  unitsSold: number;
+  sellingPricePerUnitUGX: number;
+  costPerUnitSnapshotUGX: number;
+  channel?: string | null;
+  notes?: string | null;
+  revenueUGX?: number;
+  cogsUGX?: number;
+  profitUGX?: number;
+  marginBps?: number;
+};
+
+const emptyEntry = (): SalesEntry => ({
   date: getLocalDateString(),
-  productCostingId: null as string | null,
+  productCostingId: null,
   productNameSnapshot: "",
   unitsSold: 1,
   sellingPricePerUnitUGX: 0,
@@ -16,20 +38,6 @@ const emptyEntry = () => ({
   channel: "",
   notes: "",
 });
-
-type ProductOption = {
-  id: string;
-  name: string;
-  costPerUnitUGX: number | null;
-};
-
-type SalesEntry = ReturnType<typeof emptyEntry> & {
-  id?: string;
-  revenueUGX?: number;
-  cogsUGX?: number;
-  profitUGX?: number;
-  marginBps?: number;
-};
 
 type SalesData = {
   entries: SalesEntry[];
@@ -288,14 +296,14 @@ export function SalesPageClient({
           <div>
             <label className="text-sm font-medium">Channel</label>
             <Input
-              value={draft.channel}
+              value={draft.channel ?? ""}
               onChange={(event) => setDraft({ ...draft, channel: event.target.value })}
             />
           </div>
           <div>
             <label className="text-sm font-medium">Notes</label>
             <Input
-              value={draft.notes}
+              value={draft.notes ?? ""}
               onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
             />
           </div>

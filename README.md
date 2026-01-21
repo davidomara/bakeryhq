@@ -54,10 +54,28 @@ A production-ready bakery costing and profit tracking app built on the Stack Aut
     npm run dev 
     ```
 
+## Prisma Studio
+
+```bash
+npx prisma studio
+```
+
 ## Tests
 
 ```bash
 npm run test
+```
+
+## Useful Commands
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npx prisma db push
+npx prisma studio
+npm run test
+npm run dev
 ```
 
 ## Features & Tech Stack

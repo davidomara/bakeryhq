@@ -171,36 +171,45 @@ export function WeddingCakesPageClient({
 
     setErrors([]);
     startTransition(async () => {
-      const saved = await upsertWeddingCosting(teamId, payload);
-      const next = {
-        id: saved.id,
-        clientName: saved.clientName,
-        eventDate: saved.eventDate ? saved.eventDate.toISOString().slice(0, 10) : null,
-        notes: saved.notes,
-        markupBps: saved.markupBps,
-        targetProfitUGX: saved.targetProfitUGX,
-        targetMarginBps: saved.targetMarginBps,
-        userSellingPriceUGX: saved.userSellingPriceUGX,
-        tiers: saved.tiers.map((tier) => ({
-          id: tier.id,
-          name: tier.name,
-          servings: tier.servings,
-          flavor: tier.flavor ?? "",
-          linkedProductCostingId: tier.linkedProductCostingId,
-          manualTierCostUGX: tier.manualTierCostUGX,
-        })),
-        extras: saved.extras.map((extra) => ({
-          id: extra.id,
-          name: extra.name,
-          costUGX: extra.costUGX,
-        })),
-      };
-      setCostings((prev) => {
-        const filtered = prev.filter((item) => item.id !== saved.id);
-        return [next, ...filtered];
-      });
-      setSelectedId(saved.id);
-      setDraft(next);
+      try {
+        const saved = await upsertWeddingCosting(teamId, payload);
+        const next = {
+          id: saved.id,
+          clientName: saved.clientName,
+          eventDate: saved.eventDate ? saved.eventDate.toISOString().slice(0, 10) : null,
+          notes: saved.notes,
+          markupBps: saved.markupBps,
+          targetProfitUGX: saved.targetProfitUGX,
+          targetMarginBps: saved.targetMarginBps,
+          userSellingPriceUGX: saved.userSellingPriceUGX,
+          tiers: saved.tiers.map((tier) => ({
+            id: tier.id,
+            name: tier.name,
+            servings: tier.servings,
+            flavor: tier.flavor ?? "",
+            linkedProductCostingId: tier.linkedProductCostingId,
+            manualTierCostUGX: tier.manualTierCostUGX,
+          })),
+          extras: saved.extras.map((extra) => ({
+            id: extra.id,
+            name: extra.name,
+            costUGX: extra.costUGX,
+          })),
+        };
+        setCostings((prev) => {
+          const filtered = prev.filter((item) => item.id !== saved.id);
+          return [next, ...filtered];
+        });
+        setSelectedId(saved.id);
+        setDraft(next);
+      } catch (error) {
+        console.error("Failed to save wedding costing", error);
+        const message =
+          error instanceof Error
+            ? `Failed to save wedding costing. ${error.message}`
+            : "Failed to save wedding costing. Please try again.";
+        setErrors([message]);
+      }
     });
   };
 

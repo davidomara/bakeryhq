@@ -205,54 +205,72 @@ export function CostingPageClient({
 
     setErrors([]);
     startTransition(async () => {
-      const saved = await upsertProductCosting(teamId, payload);
-      setCostings((prev) => {
-        const next = prev.filter((item) => item.id !== saved.id);
-        return [
-          {
-            id: saved.id,
-            name: saved.name,
-            notes: saved.notes,
-            yieldUnits: saved.yieldUnits,
-            yieldUnitLabel: saved.yieldUnitLabel,
-            laborHours: saved.laborHours ? Number(saved.laborHours) : null,
-            laborRateUGXPerHour: saved.laborRateUGXPerHour,
-            laborCostUGX: saved.laborCostUGX ?? null,
-            overheadMode: saved.overheadMode,
-            overheadValue: saved.overheadValue,
-            subtotalUGX: saved.subtotalUGX,
-            overheadUGX: saved.overheadUGX,
-            totalCostUGX: saved.totalCostUGX,
-            costPerUnitUGX: saved.costPerUnitUGX ?? null,
-            markupBps: saved.markupBps,
-            targetProfitUGX: saved.targetProfitUGX,
-            targetMarginBps: saved.targetMarginBps,
-            pricingMode: saved.pricingMode,
-            autoRecommendedPriceUGX: saved.autoRecommendedPriceUGX ?? null,
-            userSellingPriceUGX: saved.userSellingPriceUGX,
-            updatedAt: saved.updatedAt,
-            ingredientLines: saved.ingredientLines.map((line) => ({
-              id: line.id,
-              name: line.name,
-              qty: Number(line.qty),
-              unit: line.unit === "G" ? "g" : line.unit === "KG" ? "kg" : line.unit === "ML" ? "ml" : line.unit === "L" ? "l" : "pcs",
-              unitCostUGX: line.unitCostUGX,
-            })),
-            packagingLines: saved.packagingLines.map((line) => ({
-              id: line.id,
-              name: line.name,
-              costUGX: line.costUGX,
-            })),
-          },
-          ...next,
-        ];
-      });
-      if (isNew) {
-        setSelectedId("new");
-        setDraft(emptyCosting());
-      } else {
-        setSelectedId(saved.id);
-        setDraft((prev) => ({ ...prev, id: saved.id, updatedAt: saved.updatedAt }));
+      try {
+        const saved = await upsertProductCosting(teamId, payload);
+        setCostings((prev) => {
+          const next = prev.filter((item) => item.id !== saved.id);
+          return [
+            {
+              id: saved.id,
+              name: saved.name,
+              notes: saved.notes,
+              yieldUnits: saved.yieldUnits,
+              yieldUnitLabel: saved.yieldUnitLabel,
+              laborHours: saved.laborHours ? Number(saved.laborHours) : null,
+              laborRateUGXPerHour: saved.laborRateUGXPerHour,
+              laborCostUGX: saved.laborCostUGX ?? null,
+              overheadMode: saved.overheadMode,
+              overheadValue: saved.overheadValue,
+              subtotalUGX: saved.subtotalUGX,
+              overheadUGX: saved.overheadUGX,
+              totalCostUGX: saved.totalCostUGX,
+              costPerUnitUGX: saved.costPerUnitUGX ?? null,
+              markupBps: saved.markupBps,
+              targetProfitUGX: saved.targetProfitUGX,
+              targetMarginBps: saved.targetMarginBps,
+              pricingMode: saved.pricingMode,
+              autoRecommendedPriceUGX: saved.autoRecommendedPriceUGX ?? null,
+              userSellingPriceUGX: saved.userSellingPriceUGX,
+              updatedAt: saved.updatedAt,
+              ingredientLines: saved.ingredientLines.map((line) => ({
+                id: line.id,
+                name: line.name,
+                qty: Number(line.qty),
+                unit:
+                  line.unit === "G"
+                    ? "g"
+                    : line.unit === "KG"
+                      ? "kg"
+                      : line.unit === "ML"
+                        ? "ml"
+                        : line.unit === "L"
+                          ? "l"
+                          : "pcs",
+                unitCostUGX: line.unitCostUGX,
+              })),
+              packagingLines: saved.packagingLines.map((line) => ({
+                id: line.id,
+                name: line.name,
+                costUGX: line.costUGX,
+              })),
+            },
+            ...next,
+          ];
+        });
+        if (isNew) {
+          setSelectedId("new");
+          setDraft(emptyCosting());
+        } else {
+          setSelectedId(saved.id);
+          setDraft((prev) => ({ ...prev, id: saved.id, updatedAt: saved.updatedAt }));
+        }
+      } catch (error) {
+        console.error("Failed to save costing", error);
+        const message =
+          error instanceof Error
+            ? `Failed to save costing. ${error.message}`
+            : "Failed to save costing. Please try again.";
+        setErrors([message]);
       }
     });
   };

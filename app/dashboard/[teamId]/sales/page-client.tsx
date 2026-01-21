@@ -7,7 +7,7 @@ import { listSalesData, upsertSalesEntry } from "@/app/dashboard/[teamId]/sales/
 import { salesEntryInputSchema } from "@/lib/costing/schema";
 
 const emptyEntry = () => ({
-  date: new Date().toISOString().slice(0, 10),
+  date: getLocalDateString(),
   productCostingId: null as string | null,
   productNameSnapshot: "",
   unitsSold: 1,
@@ -196,8 +196,8 @@ export function SalesPageClient({
         <h2 className="text-lg font-semibold">Add sale</h2>
         {errors.length > 0 ? (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {errors.map((error) => (
-              <div key={error}>{error}</div>
+            {errors.map((error, index) => (
+              <div key={`error-${index}`}>{error}</div>
             ))}
           </div>
         ) : null}
@@ -386,4 +386,12 @@ function toNumber(value: string) {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getLocalDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

@@ -32,7 +32,7 @@ A production-ready bakery costing and profit tracking app built on the Stack Aut
 
     Fill in Stack Auth keys in `.env.local` and set the database connection string:
 
-    ```
+    ```env
     DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/bakeryhq?schema=public
     ```
 

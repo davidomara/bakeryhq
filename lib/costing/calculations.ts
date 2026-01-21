@@ -20,6 +20,13 @@ export type OverheadInput = {
   value: number;
 };
 
+/**
+ * Normalize ingredient quantity into base units for costing calculations.
+ * Inputs: qty in the provided unit (g, kg, ml, l, pcs). Returns qty in kg, l, or pcs.
+ * g -> kg, ml -> l, kg/l/pcs -> unchanged.
+ * @public
+ * TODO: Use this consistently in UI-side previews and exports when unit conversions expand.
+ */
 export function normalizeQuantity(qty: number, unit: IngredientUnit) {
   switch (unit) {
     case "g":

@@ -37,6 +37,7 @@ async function main() {
       markupBps: 3000,
       targetProfitUGX: 10000,
       targetMarginBps: 4000,
+      pricingMode: "AUTO_RECOMMENDED",
       autoRecommendedPriceUGX: 37400,
       userSellingPriceUGX: 35000,
       ingredientLines: {

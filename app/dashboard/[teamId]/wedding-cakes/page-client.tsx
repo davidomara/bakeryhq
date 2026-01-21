@@ -134,6 +134,9 @@ export function WeddingCakesPageClient({
   };
 
   const handleSave = () => {
+    const filteredExtras = draft.extras.filter(
+      (extra) => extra.name.trim() !== "" || extra.costUGX !== 0
+    );
     const payload = {
       id: draft.id,
       clientName: draft.clientName,
@@ -147,7 +150,7 @@ export function WeddingCakesPageClient({
         linkedProductCostingId: tier.linkedProductCostingId,
         manualTierCostUGX: tier.manualTierCostUGX,
       })),
-      extras: draft.extras.map((extra) => ({
+      extras: filteredExtras.map((extra) => ({
         id: extra.id,
         name: extra.name,
         costUGX: extra.costUGX,

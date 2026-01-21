@@ -21,7 +21,7 @@ const unitToPrisma = {
 export async function listProductCostings(teamId: string) {
   await requireTeamContext(teamId);
 
-  return prisma.productCosting.findMany({
+  const costings = await prisma.productCosting.findMany({
     where: { teamId },
     orderBy: { updatedAt: "desc" },
     include: {
@@ -29,6 +29,8 @@ export async function listProductCostings(teamId: string) {
       packagingLines: true,
     },
   });
+
+  return costings.map((costing) => serializeProductCosting(costing));
 }
 
 export async function upsertProductCosting(teamId: string, rawInput: unknown) {
@@ -106,7 +108,7 @@ export async function upsertProductCosting(teamId: string, rawInput: unknown) {
       await tx.ingredientLine.deleteMany({ where: { productCostingId: input.id } });
       await tx.packagingLine.deleteMany({ where: { productCostingId: input.id } });
 
-      return tx.productCosting.update({
+      const updated = await tx.productCosting.update({
         where: { id: input.id },
         data: {
           ...data,
@@ -119,10 +121,11 @@ export async function upsertProductCosting(teamId: string, rawInput: unknown) {
         },
         include: { ingredientLines: true, packagingLines: true },
       });
+      return serializeProductCosting(updated);
     });
   }
 
-  return prisma.productCosting.create({
+  const created = await prisma.productCosting.create({
     data: {
       ...data,
       ingredientLines: {
@@ -134,6 +137,7 @@ export async function upsertProductCosting(teamId: string, rawInput: unknown) {
     },
     include: { ingredientLines: true, packagingLines: true },
   });
+  return serializeProductCosting(created);
 }
 
 export async function duplicateProductCosting(teamId: string, productCostingId: string) {
@@ -148,7 +152,7 @@ export async function duplicateProductCosting(teamId: string, productCostingId: 
     throw new Error("Costing not found.");
   }
 
-  return prisma.productCosting.create({
+  const created = await prisma.productCosting.create({
     data: {
       teamId: resolvedTeamId,
       name: `${existing.name} (Copy)`,
@@ -188,4 +192,77 @@ export async function duplicateProductCosting(teamId: string, productCostingId: 
     },
     include: { ingredientLines: true, packagingLines: true },
   });
+  return serializeProductCosting(created);
+}
+
+function serializeProductCosting(costing: {
+  id: string;
+  name: string;
+  notes: string | null;
+  yieldUnits: number | null;
+  yieldUnitLabel: string | null;
+  laborHours: { toNumber: () => number } | null;
+  laborRateUGXPerHour: number | null;
+  laborCostUGX: number | null;
+  overheadMode: "FLAT_UGX" | "PERCENT_OF_SUBTOTAL";
+  overheadValue: number;
+  subtotalUGX: number;
+  overheadUGX: number;
+  totalCostUGX: number;
+  costPerUnitUGX: number | null;
+  markupBps: number | null;
+  targetProfitUGX: number | null;
+  targetMarginBps: number | null;
+  pricingMode: "MARKUP" | "TARGET_PROFIT" | "TARGET_MARGIN" | "AUTO_RECOMMENDED";
+  autoRecommendedPriceUGX: number | null;
+  userSellingPriceUGX: number | null;
+  updatedAt: Date;
+  ingredientLines: Array<{
+    id: string;
+    name: string;
+    qty: { toNumber: () => number };
+    unit: "G" | "KG" | "ML" | "L" | "PCS";
+    unitCostUGX: number;
+  }>;
+  packagingLines: Array<{
+    id: string;
+    name: string;
+    costUGX: number;
+  }>;
+}) {
+  return {
+    id: costing.id,
+    name: costing.name,
+    notes: costing.notes,
+    yieldUnits: costing.yieldUnits,
+    yieldUnitLabel: costing.yieldUnitLabel,
+    laborHours: costing.laborHours ? Number(costing.laborHours) : null,
+    laborRateUGXPerHour: costing.laborRateUGXPerHour,
+    laborCostUGX: costing.laborCostUGX,
+    overheadMode: costing.overheadMode,
+    overheadValue: costing.overheadValue,
+    subtotalUGX: costing.subtotalUGX,
+    overheadUGX: costing.overheadUGX,
+    totalCostUGX: costing.totalCostUGX,
+    costPerUnitUGX: costing.costPerUnitUGX,
+    markupBps: costing.markupBps,
+    targetProfitUGX: costing.targetProfitUGX,
+    targetMarginBps: costing.targetMarginBps,
+    pricingMode: costing.pricingMode,
+    autoRecommendedPriceUGX: costing.autoRecommendedPriceUGX,
+    userSellingPriceUGX: costing.userSellingPriceUGX,
+    updatedAt: costing.updatedAt.toISOString(),
+    ingredientLines: costing.ingredientLines.map((line) => ({
+      id: line.id,
+      name: line.name,
+      qty: Number(line.qty),
+      unit: line.unit,
+      unitCostUGX: line.unitCostUGX,
+    })),
+    packagingLines: costing.packagingLines.map((line) => ({
+      id: line.id,
+      name: line.name,
+      costUGX: line.costUGX,
+    })),
+  };
 }

@@ -44,13 +44,20 @@ export type ProductCostingClient = {
   yieldUnitLabel?: string | null;
   laborHours?: number | null;
   laborRateUGXPerHour?: number | null;
+  laborCostUGX?: number | null;
   overheadMode: "FLAT_UGX" | "PERCENT_OF_SUBTOTAL";
   overheadValue: number;
+  subtotalUGX?: number;
+  overheadUGX?: number;
+  totalCostUGX?: number;
+  costPerUnitUGX?: number | null;
   markupBps?: number | null;
   targetProfitUGX?: number | null;
   targetMarginBps?: number | null;
   pricingMode?: "MARKUP" | "TARGET_PROFIT" | "TARGET_MARGIN" | "AUTO_RECOMMENDED";
+  autoRecommendedPriceUGX?: number | null;
   userSellingPriceUGX?: number | null;
+  updatedAt?: string;
   ingredientLines: IngredientRow[];
   packagingLines: PackagingRow[];
 };
@@ -62,13 +69,20 @@ const emptyCosting = (): ProductCostingClient => ({
   yieldUnitLabel: "",
   laborHours: null,
   laborRateUGXPerHour: null,
+  laborCostUGX: null,
   overheadMode: "FLAT_UGX",
   overheadValue: 0,
+  subtotalUGX: 0,
+  overheadUGX: 0,
+  totalCostUGX: 0,
+  costPerUnitUGX: null,
   markupBps: null,
   targetProfitUGX: null,
   targetMarginBps: null,
   pricingMode: "AUTO_RECOMMENDED",
+  autoRecommendedPriceUGX: null,
   userSellingPriceUGX: null,
+  updatedAt: undefined,
   ingredientLines: [defaultIngredient()],
   packagingLines: [defaultPackaging()],
 });
@@ -146,6 +160,10 @@ export function CostingPageClient({
   };
 
   const handleSave = () => {
+    const isNew = !draft.id;
+    const filteredPackaging = draft.packagingLines.filter(
+      (line) => line.name.trim() !== "" || line.costUGX !== 0
+    );
     const payload = {
       id: draft.id,
       name: draft.name,
@@ -157,7 +175,7 @@ export function CostingPageClient({
         unit: line.unit,
         unitCostUGX: line.unitCostUGX,
       })),
-      packaging: draft.packagingLines.map((line) => ({
+      packaging: filteredPackaging.map((line) => ({
         id: line.id,
         name: line.name,
         costUGX: line.costUGX,
@@ -199,13 +217,20 @@ export function CostingPageClient({
             yieldUnitLabel: saved.yieldUnitLabel,
             laborHours: saved.laborHours ? Number(saved.laborHours) : null,
             laborRateUGXPerHour: saved.laborRateUGXPerHour,
+            laborCostUGX: saved.laborCostUGX ?? null,
             overheadMode: saved.overheadMode,
             overheadValue: saved.overheadValue,
+            subtotalUGX: saved.subtotalUGX,
+            overheadUGX: saved.overheadUGX,
+            totalCostUGX: saved.totalCostUGX,
+            costPerUnitUGX: saved.costPerUnitUGX ?? null,
             markupBps: saved.markupBps,
             targetProfitUGX: saved.targetProfitUGX,
             targetMarginBps: saved.targetMarginBps,
             pricingMode: saved.pricingMode,
+            autoRecommendedPriceUGX: saved.autoRecommendedPriceUGX ?? null,
             userSellingPriceUGX: saved.userSellingPriceUGX,
+            updatedAt: saved.updatedAt,
             ingredientLines: saved.ingredientLines.map((line) => ({
               id: line.id,
               name: line.name,
@@ -222,8 +247,13 @@ export function CostingPageClient({
           ...next,
         ];
       });
-      setSelectedId(saved.id);
-      setDraft((prev) => ({ ...prev, id: saved.id }));
+      if (isNew) {
+        setSelectedId("new");
+        setDraft(emptyCosting());
+      } else {
+        setSelectedId(saved.id);
+        setDraft((prev) => ({ ...prev, id: saved.id, updatedAt: saved.updatedAt }));
+      }
     });
   };
 
@@ -242,13 +272,20 @@ export function CostingPageClient({
         yieldUnitLabel: duplicated.yieldUnitLabel,
         laborHours: duplicated.laborHours ? Number(duplicated.laborHours) : null,
         laborRateUGXPerHour: duplicated.laborRateUGXPerHour,
+        laborCostUGX: duplicated.laborCostUGX ?? null,
         overheadMode: duplicated.overheadMode,
         overheadValue: duplicated.overheadValue,
+        subtotalUGX: duplicated.subtotalUGX,
+        overheadUGX: duplicated.overheadUGX,
+        totalCostUGX: duplicated.totalCostUGX,
+        costPerUnitUGX: duplicated.costPerUnitUGX ?? null,
         markupBps: duplicated.markupBps,
         targetProfitUGX: duplicated.targetProfitUGX,
         targetMarginBps: duplicated.targetMarginBps,
         pricingMode: duplicated.pricingMode,
+        autoRecommendedPriceUGX: duplicated.autoRecommendedPriceUGX ?? null,
         userSellingPriceUGX: duplicated.userSellingPriceUGX,
+        updatedAt: duplicated.updatedAt,
         ingredientLines: duplicated.ingredientLines.map((line) => ({
           id: line.id,
           name: line.name,
@@ -566,6 +603,47 @@ export function CostingPageClient({
         </div>
       </section>
 
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="text-lg font-semibold">Saved costings</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="py-2">Name</th>
+                <th className="py-2">Total cost (UGX)</th>
+                <th className="py-2">Updated</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {costings.map((item) => (
+                <tr key={item.id} className="border-t">
+                  <td className="py-2 pr-2">{item.name}</td>
+                  <td className="py-2 pr-2">
+                    {typeof item.totalCostUGX === "number"
+                      ? item.totalCostUGX.toLocaleString()
+                      : "-"}
+                  </td>
+                  <td className="py-2 pr-2">{formatDate(item.updatedAt)}</td>
+                  <td className="py-2">
+                    <Button variant="ghost" onClick={() => selectCosting(item.id!)}>
+                      View
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {costings.length === 0 ? (
+                <tr>
+                  <td className="py-2 text-muted-foreground" colSpan={4}>
+                    No saved costings yet.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-3 rounded-lg border p-4">
           <h2 className="text-lg font-semibold">Totals</h2>
@@ -693,6 +771,14 @@ function toNumber(value: string) {
 
 function formatNullable(value: number | null) {
   return typeof value === "number" ? value.toLocaleString() : "-";
+}
+
+function formatDate(value?: string) {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
 }
 
 function updateIngredient(

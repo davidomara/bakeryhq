@@ -4,9 +4,9 @@ import { CostingPageClient } from "@/app/dashboard/[teamId]/costing/page-client"
 export default async function ProductCostingPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }>;
 }) {
-  const { teamId } = params;
+  const { teamId } = await params;
   const costings = await listProductCostings(teamId);
 
   const serialized = costings.map((costing) => ({

@@ -26,20 +26,18 @@ export async function requireTeamContext(expectedTeamId?: string) {
     throw new Error("No team selected.");
   }
 
-  await prisma.teamMember.upsert({
+  const membership = await prisma.teamMember.findUnique({
     where: {
       teamId_userId: {
         teamId: team.id,
         userId: user.id,
       },
     },
-    update: {},
-    create: {
-      teamId: team.id,
-      userId: user.id,
-      role: "ADMIN",
-    },
+    select: { id: true, role: true },
   });
+  if (!membership) {
+    throw new Error("Team membership required.");
+  }
 
   return {
     user,

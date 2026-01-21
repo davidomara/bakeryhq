@@ -25,8 +25,14 @@ export function SettingsPageClient({
   const handleSave = () => {
     setStatus(null);
     startTransition(async () => {
-      await updateTeamSettings(teamId, settings);
-      setStatus("Settings updated.");
+      try {
+        await updateTeamSettings(teamId, settings);
+        setStatus("Settings updated.");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : String(err);
+        setStatus(`Failed to update settings: ${message}`);
+      }
     });
   };
 

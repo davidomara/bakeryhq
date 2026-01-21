@@ -130,16 +130,19 @@ export async function upsertSalesEntry(teamId: string, rawInput: unknown) {
   } as const;
 
   if (input.id) {
-    const existing = await prisma.salesEntry.findFirst({
-      where: { id: input.id, teamId: resolvedTeamId },
-    });
-    if (!existing) {
-      throw new Error("Sales entry not found.");
-    }
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.salesEntry.findFirst({
+        where: { id: input.id, teamId: resolvedTeamId },
+        select: { id: true },
+      });
+      if (!existing) {
+        throw new Error("Sales entry not found.");
+      }
 
-    return prisma.salesEntry.update({
-      where: { id: input.id },
-      data,
+      return tx.salesEntry.update({
+        where: { id: input.id },
+        data,
+      });
     });
   }
 

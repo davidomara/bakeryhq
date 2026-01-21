@@ -221,7 +221,7 @@ export function SalesPageClient({
                 setDraft({
                   ...draft,
                   productCostingId: value,
-                  productNameSnapshot: product?.name ?? draft.productNameSnapshot,
+                  productNameSnapshot: product?.name ?? "",
                   costPerUnitSnapshotUGX: product?.costPerUnitUGX ?? draft.costPerUnitSnapshotUGX,
                 });
               }}
@@ -239,6 +239,8 @@ export function SalesPageClient({
             <Input
               value={draft.productNameSnapshot}
               onChange={(event) => setDraft({ ...draft, productNameSnapshot: event.target.value })}
+              disabled={Boolean(draft.productCostingId)}
+              className={draft.productCostingId ? "bg-muted" : undefined}
               placeholder="Custom cake"
             />
           </div>

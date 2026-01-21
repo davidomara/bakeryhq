@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IngredientUnit {
+  G
+  KG
+  ML
+  L
+  PCS
+}
+
+enum OverheadMode {
+  FLAT_UGX
+  PERCENT_OF_SUBTOTAL
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamRole @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model TeamSettings {
+  id                   String       @id @default(cuid())
+  teamId               String       @unique
+  bakeryName           String?
+  currency             String       @default("UGX")
+  defaultMarkupBps     Int          @default(0)
+  defaultOverheadMode  OverheadMode @default(FLAT_UGX)
+  defaultOverheadValue Int          @default(0)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+}
+
+model ProductCosting {
+  id                      String       @id @default(cuid())
+  teamId                  String
+  name                    String
+  yieldUnits              Int?
+  yieldUnitLabel          String?
+  notes                   String?
+  laborHours              Decimal?     @db.Decimal(10, 2)
+  laborRateUGXPerHour     Int?
+  laborCostUGX            Int?
+  overheadMode            OverheadMode @default(FLAT_UGX)
+  overheadValue           Int          @default(0)
+  subtotalUGX             Int
+  overheadUGX             Int
+  totalCostUGX            Int
+  costPerUnitUGX          Int?
+  markupBps               Int?
+  targetProfitUGX         Int?
+  targetMarginBps         Int?
+  autoRecommendedPriceUGX Int?
+  userSellingPriceUGX     Int?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  ingredientLines IngredientLine[]
+  packagingLines  PackagingLine[]
+  weddingTiers    WeddingTier[] @relation("LinkedProductCosting")
+  salesEntries    SalesEntry[]
+
+  @@index([teamId])
+}
+
+model IngredientLine {
+  id               String         @id @default(cuid())
+  productCostingId String
+  name             String
+  qty              Decimal        @db.Decimal(12, 3)
+  unit             IngredientUnit
+  unitCostUGX      Int
+  lineCostUGX      Int
+
+  productCosting ProductCosting @relation(fields: [productCostingId], references: [id], onDelete: Cascade)
+}
+
+model PackagingLine {
+  id               String  @id @default(cuid())
+  productCostingId String
+  name             String
+  costUGX          Int
+
+  productCosting ProductCosting @relation(fields: [productCostingId], references: [id], onDelete: Cascade)
+}
+
+model WeddingCosting {
+  id                      String   @id @default(cuid())
+  teamId                  String
+  clientName              String?
+  eventDate               DateTime?
+  notes                   String?
+  totalCostUGX            Int
+  costPerServingUGX       Int?
+  markupBps               Int?
+  targetProfitUGX         Int?
+  targetMarginBps         Int?
+  autoRecommendedPriceUGX Int?
+  userSellingPriceUGX     Int?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  tiers  WeddingTier[]
+  extras WeddingExtra[]
+
+  @@index([teamId])
+}
+
+model WeddingTier {
+  id                     String  @id @default(cuid())
+  weddingCostingId       String
+  name                   String
+  servings               Int?
+  flavor                 String?
+  linkedProductCostingId String?
+  tierCostSnapshotUGX    Int?
+  manualTierCostUGX      Int?
+
+  weddingCosting        WeddingCosting @relation(fields: [weddingCostingId], references: [id], onDelete: Cascade)
+  linkedProductCosting  ProductCosting? @relation("LinkedProductCosting", fields: [linkedProductCostingId], references: [id])
+}
+
+model WeddingExtra {
+  id               String  @id @default(cuid())
+  weddingCostingId String
+  name             String
+  costUGX          Int
+
+  weddingCosting WeddingCosting @relation(fields: [weddingCostingId], references: [id], onDelete: Cascade)
+}
+
+model SalesEntry {
+  id                     String   @id @default(cuid())
+  teamId                 String
+  date                   DateTime
+  productCostingId       String?
+  productNameSnapshot    String
+  unitsSold              Int
+  sellingPricePerUnitUGX Int
+  costPerUnitSnapshotUGX Int
+  revenueUGX             Int
+  cogsUGX                Int
+  profitUGX              Int
+  channel                String?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  productCosting ProductCosting? @relation(fields: [productCostingId], references: [id])
+
+  @@index([teamId])
+  @@index([date])
+}

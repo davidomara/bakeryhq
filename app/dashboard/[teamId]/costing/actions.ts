@@ -256,7 +256,16 @@ function serializeProductCosting(costing: {
       id: line.id,
       name: line.name,
       qty: Number(line.qty),
-      unit: line.unit,
+      unit:
+        line.unit === "G"
+          ? "g"
+          : line.unit === "KG"
+            ? "kg"
+            : line.unit === "ML"
+              ? "ml"
+              : line.unit === "L"
+                ? "l"
+                : "pcs",
       unitCostUGX: line.unitCostUGX,
     })),
     packagingLines: costing.packagingLines.map((line) => ({

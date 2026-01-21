@@ -232,22 +232,13 @@ export function CostingPageClient({
               autoRecommendedPriceUGX: saved.autoRecommendedPriceUGX ?? null,
               userSellingPriceUGX: saved.userSellingPriceUGX,
               updatedAt: saved.updatedAt,
-              ingredientLines: saved.ingredientLines.map((line) => ({
-                id: line.id,
-                name: line.name,
-                qty: Number(line.qty),
-                unit:
-                  line.unit === "G"
-                    ? "g"
-                    : line.unit === "KG"
-                      ? "kg"
-                      : line.unit === "ML"
-                        ? "ml"
-                        : line.unit === "L"
-                          ? "l"
-                          : "pcs",
-                unitCostUGX: line.unitCostUGX,
-              })),
+            ingredientLines: saved.ingredientLines.map((line) => ({
+              id: line.id,
+              name: line.name,
+              qty: Number(line.qty),
+              unit: toIngredientUnit(line.unit),
+              unitCostUGX: line.unitCostUGX,
+            })),
               packagingLines: saved.packagingLines.map((line) => ({
                 id: line.id,
                 name: line.name,
@@ -308,7 +299,7 @@ export function CostingPageClient({
           id: line.id,
           name: line.name,
           qty: Number(line.qty),
-          unit: line.unit === "G" ? "g" : line.unit === "KG" ? "kg" : line.unit === "ML" ? "ml" : line.unit === "L" ? "l" : "pcs",
+          unit: toIngredientUnit(line.unit),
           unitCostUGX: line.unitCostUGX,
         })),
         packagingLines: duplicated.packagingLines.map((line) => ({
@@ -797,6 +788,21 @@ function formatDate(value?: string) {
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+}
+
+function toIngredientUnit(unit: string): IngredientUnit {
+  switch (unit) {
+    case "G":
+      return "g";
+    case "KG":
+      return "kg";
+    case "ML":
+      return "ml";
+    case "L":
+      return "l";
+    default:
+      return "pcs";
+  }
 }
 
 function updateIngredient(

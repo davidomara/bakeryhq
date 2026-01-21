@@ -26,6 +26,13 @@ enum TeamRole {
   STAFF
 }
 
+enum PricingMode {
+  MARKUP
+  TARGET_PROFIT
+  TARGET_MARGIN
+  AUTO_RECOMMENDED
+}
+
 model TeamMember {
   id        String   @id @default(cuid())
   teamId    String
@@ -69,6 +76,7 @@ model ProductCosting {
   markupBps               Int?
   targetProfitUGX         Int?
   targetMarginBps         Int?
+  pricingMode             PricingMode  @default(AUTO_RECOMMENDED)
   autoRecommendedPriceUGX Int?
   userSellingPriceUGX     Int?
   createdAt               DateTime     @default(now())

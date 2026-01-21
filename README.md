@@ -1,32 +1,14 @@
-# Next.js Multi-tenant Starter Template
+# BakeryHQ Costing App
 
-A minimalistic multi-tenant Next.js starter template with minimal setup and a modular design. Bring your own backend and database.
+A production-ready bakery costing and profit tracking app built on the Stack Auth multi-tenant starter template (Next.js App Router + TypeScript + Tailwind + shadcn/ui).
 
-[Demo](https://stack-template.vercel.app/)
+## Features
 
-## Landing Page
-
-<div align="center">
-<img src="./assets/landing-page.png" alt="Teams" width="600"/>
-</div>
-
-## Dashboard
-
-<div align="center">
-<img src="./assets/dashboard-overview.png" alt="Teams" width="600"/>
-</div>
-
-## Multi-tenancy (Teams)
-
-<div align="center">
-<img src="./assets/team-switcher.png" alt="Teams" width="400"/>
-</div>
-
-## Account Settings
-
-<div align="center">
-<img src="./assets/account-settings.png" alt="Teams" width="500"/>
-</div>
+- Product costing with ingredient, packaging, labor, and overhead breakdowns
+- Auto pricing recommendations (markup, target profit, target margin)
+- Wedding cake costing with tiers, extras, and print-friendly quote view
+- Monthly profit summary with sales log and rollups
+- XLSX exports for product, wedding, and monthly summary
 
 ## Getting Started
 
@@ -42,23 +24,51 @@ A minimalistic multi-tenant Next.js starter template with minimal setup and a mo
     npm install
     ```
 
-3. Register an account on [Stack Auth](https://stack-auth.com), copy the keys from the dashboard, and paste them into the `.env.local` file. Then, enable "client team creation" on the team settings tab.
+3. Create environment files
+
+    ```bash
+    cp .env.example .env.local
+    ```
+
+    Fill in Stack Auth keys in `.env.local` and set the database connection string:
+
+    ```
+    DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/bakeryhq?schema=public
+    ```
+
+4. Register an account on [Stack Auth](https://stack-auth.com), copy the keys from the dashboard, and paste them into the `.env.local` file. Then, enable "client team creation" on the team settings tab.
 
     If you want to learn more about Stack Auth or self-host it, check out the [Docs](https://docs.stack-auth.com) and [GitHub](https://github.com/stack-auth/stack).
 
-4. Start the development server and go to [http://localhost:3000](http://localhost:3000)
+5. Run Prisma migrations and seed data
+
+    ```bash
+    npm run prisma:generate
+    npm run prisma:migrate
+    npm run prisma:seed
+    ```
+
+6. Start the development server and go to [http://localhost:3000](http://localhost:3000)
 
     ```bash
     npm run dev 
     ```
 
+## Tests
+
+```bash
+npm run test
+```
+
 ## Features & Tech Stack
 
-- Next.js 14 app router
+- Next.js app router
 - TypeScript
 - Tailwind & Shadcn UI
 - Stack Auth
-- Multi-tenancy (teams/orgs)
+- Multi-tenancy (teams/orgs) with Stack Auth
+- Prisma + Postgres
+- Zod validation
 - Dark mode
 
 ## Inspired by

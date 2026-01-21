@@ -103,15 +103,20 @@ export function SalesPageClient({
 
     setErrors([]);
     startTransition(async () => {
-      await upsertSalesEntry(teamId, payload);
-      const refreshed = await listSalesData(teamId, {
-        startDate: filters.startDate || null,
-        endDate: filters.endDate || null,
-        productCostingId: filters.productCostingId || null,
-        channel: filters.channel || null,
-      });
-      setData(refreshed);
-      setDraft(emptyEntry());
+      try {
+        await upsertSalesEntry(teamId, payload);
+        const refreshed = await listSalesData(teamId, {
+          startDate: filters.startDate || null,
+          endDate: filters.endDate || null,
+          productCostingId: filters.productCostingId || null,
+          channel: filters.channel || null,
+        });
+        setData(refreshed);
+        setDraft(emptyEntry());
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setErrors([`Failed to save sale.${message ? ` ${message}` : ""}`]);
+      }
     });
   };
 

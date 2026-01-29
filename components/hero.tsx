@@ -13,13 +13,20 @@ export function Hero(props: {
   secondaryCtaText: string;
   secondaryCtaLink: string;
 }) {
+  const isExternalLink = (value: string) =>
+    value.startsWith("http://") || value.startsWith("https://");
+
+  const capsuleExternal = isExternalLink(props.capsuleLink);
+  const secondaryExternal = isExternalLink(props.secondaryCtaLink);
+
   return (
     <section className="space-y-6 py-32 md:py-48 lg:py-52">
       <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
         <Link
           href={props.capsuleLink}
           className="rounded-2xl bg-muted px-4 py-1.5 text-sm font-medium"
-          target="_blank"
+          target={capsuleExternal ? "_blank" : undefined}
+          rel={capsuleExternal ? "noreferrer" : undefined}
         >
           {props.capsuleText}
         </Link>
@@ -39,8 +46,8 @@ export function Hero(props: {
 
           <Link
             href={props.secondaryCtaLink}
-            target="_blank"
-            rel="noreferrer"
+            target={secondaryExternal ? "_blank" : undefined}
+            rel={secondaryExternal ? "noreferrer" : undefined}
             className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
           >
             {props.secondaryCtaText}

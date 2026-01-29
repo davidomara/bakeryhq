@@ -9,13 +9,93 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Graph } from "./graph";
+import { prisma } from "@/lib/db/prisma";
+import { requireTeamContext } from "@/lib/auth/team";
+import { computeMarginBps } from "@/lib/costing/calculations";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Example dashboard app built using the components.",
+  description: "BakeryHQ overview with costing and profit highlights.",
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ teamId: string }>;
+}) {
+  const { teamId } = await params;
+  await requireTeamContext(teamId);
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startWindow = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  const [monthlySales, monthlySalesCount, costingCount, recentSales] =
+    await Promise.all([
+      prisma.salesEntry.findMany({
+        where: { teamId, date: { gte: startOfMonth } },
+        select: { revenueUGX: true, profitUGX: true },
+      }),
+      prisma.salesEntry.count({
+        where: { teamId, date: { gte: startOfMonth } },
+      }),
+      prisma.productCosting.count({ where: { teamId } }),
+      prisma.salesEntry.findMany({
+        where: { teamId },
+        orderBy: { date: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          productNameSnapshot: true,
+          revenueUGX: true,
+          date: true,
+          channel: true,
+        },
+      }),
+    ]);
+
+  const monthlyRevenueUGX = monthlySales.reduce(
+    (sum, entry) => sum + entry.revenueUGX,
+    0
+  );
+  const monthlyProfitUGX = monthlySales.reduce(
+    (sum, entry) => sum + entry.profitUGX,
+    0
+  );
+  const avgMarginBps = computeMarginBps(monthlyRevenueUGX, monthlyProfitUGX);
+
+  const salesWindow = await prisma.salesEntry.findMany({
+    where: { teamId, date: { gte: startWindow } },
+    select: { date: true, revenueUGX: true },
+  });
+
+  const monthlyMap = new Map<string, number>();
+  for (let i = 0; i < 6; i += 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    monthlyMap.set(key, 0);
+  }
+  salesWindow.forEach((entry) => {
+    const key = `${entry.date.getFullYear()}-${entry.date.getMonth()}`;
+    monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + entry.revenueUGX);
+  });
+
+  const chartData = Array.from(monthlyMap.entries()).map(([key, total]) => {
+    const [year, month] = key.split("-").map(Number);
+    const label = new Date(year, month, 1).toLocaleString("en-US", {
+      month: "short",
+    });
+    return { name: label, total };
+  });
+
+  const recentEntries = recentSales.map((entry) => ({
+    id: entry.id,
+    productNameSnapshot: entry.productNameSnapshot,
+    revenueUGX: entry.revenueUGX,
+    date: entry.date.toISOString().slice(0, 10),
+    channel: entry.channel,
+  }));
+
   return (
     <>
       <div className="flex-col">
@@ -27,7 +107,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Total Revenue
+                  Monthly Revenue
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -43,16 +123,18 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$45,231.89</div>
+                <div className="text-2xl font-bold">
+                  UGX {monthlyRevenueUGX.toLocaleString()}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  This month’s revenue
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Subscriptions
+                  Costing Templates
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -70,15 +152,17 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+2350</div>
+                <div className="text-2xl font-bold">{costingCount}</div>
                 <p className="text-xs text-muted-foreground">
-                  +180.1% from last month
+                  Total saved products
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Orders Logged
+                </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -94,16 +178,18 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+12,234</div>
+                <div className="text-2xl font-bold">
+                  {monthlySalesCount}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +19% from last month
+                  Logged this month
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Active Now
+                  Avg Margin
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -119,9 +205,11 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+573</div>
+                <div className="text-2xl font-bold">
+                  {(avgMarginBps / 100).toFixed(1)}%
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since last hour
+                  Profit margin this month
                 </p>
               </CardContent>
             </Card>
@@ -129,21 +217,21 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Overview</CardTitle>
+                <CardTitle>Revenue & Profit</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                <Graph />
+                <Graph data={chartData} />
               </CardContent>
             </Card>
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Recent Sales</CardTitle>
+                <CardTitle>Recent Orders</CardTitle>
                 <CardDescription>
-                  You made 265 sales this month.
+                  Latest activity from your sales log.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentSales />
+                <RecentSales entries={recentEntries} />
               </CardContent>
             </Card>
           </div>

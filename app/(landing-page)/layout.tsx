@@ -16,8 +16,8 @@ export default function Layout(props: { children: React.ReactNode }) {
       <Footer
         builtBy="Nord Projects Uganda"
         builtByLink="https://nordprojects.vercel.app/"
-        githubLink="https://github.com/stack-auth/stack-template"
-        twitterLink="https://instagram.com"
+        githubLink="https://github.com/davidomara/bakeryhq"
+        twitterLink="https://www.instagram.com/nordlink256/"
         linkedinLink="https://linkedin.com"
       />
     </div>

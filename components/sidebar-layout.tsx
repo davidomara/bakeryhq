@@ -30,6 +30,7 @@ type Item = {
   href: string;
   icon: LucideIcon;
   type: "item";
+  indent?: boolean;
 };
 
 type Sep = {
@@ -57,7 +58,8 @@ function NavItem(props: {
       className={cn(
         buttonVariants({ variant: "ghost", size: "sm" }),
         selected && "bg-muted",
-        "flex-grow justify-start text-md text-zinc-800 dark:text-zinc-300 px-2"
+        "flex-grow justify-start text-md text-zinc-800 dark:text-zinc-300 px-2",
+        props.item.indent && "pl-6 text-sm"
       )}
       onClick={props.onClick}
       prefetch={true}

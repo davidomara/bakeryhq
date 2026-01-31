@@ -7,11 +7,45 @@ import { weddingCostingInputSchema } from "@/lib/costing/schema";
 
 export async function listWeddingCostings(teamId: string) {
   await requireTeamContext(teamId);
-  return prisma.weddingCosting.findMany({
+  const costings = await prisma.weddingCosting.findMany({
     where: { teamId },
     orderBy: { updatedAt: "desc" },
-    include: { tiers: true, extras: true },
+    select: {
+      id: true,
+      clientName: true,
+      eventDate: true,
+      notes: true,
+      markupBps: true,
+      targetProfitUGX: true,
+      targetMarginBps: true,
+      userSellingPriceUGX: true,
+      tiers: {
+        select: {
+          id: true,
+          weddingCostingId: true,
+          name: true,
+          servings: true,
+          flavor: true,
+          linkedProductCostingId: true,
+          manualTierCostUGX: true,
+          tierCostSnapshotUGX: true,
+        },
+      },
+      extras: {
+        select: {
+          id: true,
+          weddingCostingId: true,
+          name: true,
+          costUGX: true,
+        },
+      },
+    },
   });
+
+  return costings.map((costing) => ({
+    ...costing,
+    eventDate: costing.eventDate ? costing.eventDate.toISOString().slice(0, 10) : null,
+  }));
 }
 
 export async function listProductCostingOptions(teamId: string) {

@@ -1,15 +1,13 @@
 import { buttonVariants } from "@/components/ui/button";
-import {
-  GitHubLogoIcon,
-  LinkedInLogoIcon,
-  TwitterLogoIcon,
-} from "@radix-ui/react-icons";
+import { GitHubLogoIcon, LinkedInLogoIcon, TwitterLogoIcon } from "@radix-ui/react-icons";
+import { Instagram } from "lucide-react";
 import Link from "next/link";
 
 export function Footer(props: {
   builtBy: string;
   builtByLink: string;
   githubLink: string;
+  instagramLink: string;
   twitterLink: string;
   linkedinLink: string;
 }) {
@@ -34,6 +32,7 @@ export function Footer(props: {
         <div className="flex items-center space-x-1">
           {(
             [
+              { href: props.instagramLink, icon: Instagram },
               { href: props.twitterLink, icon: TwitterLogoIcon },
               { href: props.linkedinLink, icon: LinkedInLogoIcon },
               { href: props.githubLink, icon: GitHubLogoIcon },

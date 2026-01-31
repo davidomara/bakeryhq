@@ -17,7 +17,8 @@ export default function Layout(props: { children: React.ReactNode }) {
         builtBy="Nord Projects Uganda"
         builtByLink="https://nordprojects.vercel.app/"
         githubLink="https://github.com/davidomara/bakeryhq"
-        twitterLink="https://www.instagram.com/nordlink256/"
+        instagramLink="https://www.instagram.com/nordlink256/"
+        twitterLink="https://twitter.com/nordlink256"
         linkedinLink="https://linkedin.com"
       />
     </div>

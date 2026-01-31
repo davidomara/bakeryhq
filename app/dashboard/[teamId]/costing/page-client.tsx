@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -103,6 +103,14 @@ export function CostingPageClient({
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const steps = [
+    "Basics",
+    "Ingredients",
+    "Packaging",
+    "Labor & Overhead",
+    "Pricing & Review",
+  ];
+  const [stepIndex, setStepIndex] = useState(0);
 
   const totals = useMemo(() => {
     return computeProductTotals({
@@ -140,6 +148,7 @@ export function CostingPageClient({
 
   const selectCosting = (id: string | "new") => {
     setSelectedId(id);
+    setStepIndex(0);
     if (id === "new") {
       setDraft(emptyCosting());
       return;
@@ -155,9 +164,28 @@ export function CostingPageClient({
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const selected = params.get("selected");
+    if (!selected) {
+      return;
+    }
+    selectCosting(selected);
+  }, []);
+
   const updateDraft = (patch: Partial<ProductCostingClient>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
   };
+
+  const goToStep = (index: number) => {
+    if (index < 0 || index >= steps.length) {
+      return;
+    }
+    setStepIndex(index);
+  };
+
+  const handleNext = () => goToStep(stepIndex + 1);
+  const handleBack = () => goToStep(stepIndex - 1);
 
   const handleSave = () => {
     const isNew = !draft.id;
@@ -336,9 +364,6 @@ export function CostingPageClient({
               </option>
             ))}
           </select>
-          <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? "Saving..." : "Save"}
-          </Button>
           <Button variant="secondary" onClick={handleDuplicate} disabled={!draft.id || isPending}>
             Duplicate
           </Button>
@@ -352,14 +377,46 @@ export function CostingPageClient({
 
       {errors.length > 0 ? (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {errors.map((error) => (
-            <div key={error}>{error}</div>
+          {errors.map((error, index) => (
+            <div key={`error-${index}`}>{error}</div>
           ))}
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3 rounded-lg border p-4">
+      <section className="rounded-lg border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">
+              Step {stepIndex + 1}: {steps[stepIndex]}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Complete each step to build a full costing.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {steps.map((label, index) => (
+              <div key={label} className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-1 text-xs ${
+                    index === stepIndex ? "bg-primary text-primary-foreground" : "bg-muted"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span className="text-muted-foreground">{label}</span>
+                {index < stepIndex ? (
+                  <Button variant="ghost" size="sm" onClick={() => goToStep(index)}>
+                    Edit
+                  </Button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {stepIndex === 0 ? (
+        <section className="space-y-3 rounded-lg border p-4">
           <h2 className="text-lg font-semibold">Basics</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -396,9 +453,187 @@ export function CostingPageClient({
               />
             </div>
           </div>
-        </div>
+        </section>
+      ) : null}
 
-        <div className="space-y-3 rounded-lg border p-4">
+      {stepIndex === 1 ? (
+        <section className="space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Ingredients</h2>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                updateDraft({
+                  ingredientLines: [...draft.ingredientLines, defaultIngredient()],
+                })
+              }
+            >
+              Add ingredient
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2">Ingredient</th>
+                  <th className="py-2">Qty</th>
+                  <th className="py-2">Unit</th>
+                  <th className="py-2">Unit cost (UGX)</th>
+                  <th className="py-2">Line cost (UGX)</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {draft.ingredientLines.map((line, index) => {
+                  const lineCost = computeIngredientLineCostUGX({
+                    qty: line.qty,
+                    unit: line.unit,
+                    unitCostUGX: line.unitCostUGX,
+                  });
+
+                  return (
+                    <tr key={line.id} className="border-t">
+                      <td className="py-2 pr-2">
+                        <Input
+                          value={line.name}
+                          onChange={(event) =>
+                            updateIngredient(index, { name: event.target.value }, draft, setDraft)
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <Input
+                          type="number"
+                          value={line.qty}
+                          onChange={(event) =>
+                            updateIngredient(
+                              index,
+                              { qty: toNumber(event.target.value) ?? 0 },
+                              draft,
+                              setDraft
+                            )
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <select
+                          className="border rounded-md px-2 py-2 text-sm"
+                          value={line.unit}
+                          onChange={(event) =>
+                            updateIngredient(
+                              index,
+                              { unit: event.target.value as IngredientRow["unit"] },
+                              draft,
+                              setDraft
+                            )
+                          }
+                        >
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="l">l</option>
+                          <option value="pcs">pcs</option>
+                        </select>
+                      </td>
+                      <td className="py-2 pr-2">
+                        <Input
+                          type="number"
+                          value={line.unitCostUGX}
+                          onChange={(event) =>
+                            updateIngredient(
+                              index,
+                              { unitCostUGX: toNumber(event.target.value) ?? 0 },
+                              draft,
+                              setDraft
+                            )
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-2 text-sm">
+                        {lineCost.toLocaleString()}
+                      </td>
+                      <td className="py-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => removeIngredient(index, draft, setDraft)}
+                        >
+                          Remove
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {stepIndex === 2 ? (
+        <section className="space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Packaging</h2>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                updateDraft({ packagingLines: [...draft.packagingLines, defaultPackaging()] })
+              }
+            >
+              Add packaging
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2">Packaging</th>
+                  <th className="py-2">Cost (UGX)</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {draft.packagingLines.map((line, index) => (
+                  <tr key={line.id} className="border-t">
+                    <td className="py-2 pr-2">
+                      <Input
+                        value={line.name}
+                        onChange={(event) =>
+                          updatePackaging(index, { name: event.target.value }, draft, setDraft)
+                        }
+                      />
+                    </td>
+                    <td className="py-2 pr-2">
+                      <Input
+                        type="number"
+                        value={line.costUGX}
+                        onChange={(event) =>
+                          updatePackaging(
+                            index,
+                            { costUGX: toNumber(event.target.value) ?? 0 },
+                            draft,
+                            setDraft
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="py-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => removePackaging(index, draft, setDraft)}
+                      >
+                        Remove
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {stepIndex === 3 ? (
+        <section className="space-y-3 rounded-lg border p-4">
           <h2 className="text-lg font-semibold">Labor & Overhead</h2>
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
@@ -447,318 +682,133 @@ export function CostingPageClient({
           <div className="text-sm text-muted-foreground">
             Labor cost: UGX {totals.laborCostUGX.toLocaleString()}
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <section className="space-y-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Ingredients</h2>
-          <Button
-            variant="secondary"
-            onClick={() =>
-              updateDraft({
-                ingredientLines: [...draft.ingredientLines, defaultIngredient()],
-              })
-            }
-          >
-            Add ingredient
+
+      {stepIndex === 4 ? (
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3 rounded-lg border p-4">
+            <h2 className="text-lg font-semibold">Totals</h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>UGX {totals.subtotalUGX.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Overhead</span>
+                <span>UGX {totals.overheadUGX.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>Total cost</span>
+                <span>UGX {totals.totalCostUGX.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Cost per unit</span>
+                <span>
+                  {totals.costPerUnitUGX
+                    ? `UGX ${totals.costPerUnitUGX.toLocaleString()}`
+                    : "-"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-4">
+            <h2 className="text-lg font-semibold">Pricing</h2>
+            <p className="text-xs text-muted-foreground">
+              Markup/Target Profit/Target Margin are alternative ways to price. Auto recommended
+              picks the highest valid price to avoid underpricing.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium">
+                  Markup (bps) <span className="text-xs text-muted-foreground">%</span>
+                </label>
+                <Input
+                  type="number"
+                  value={draft.markupBps ?? ""}
+                  onChange={(event) => updateDraft({ markupBps: toNumber(event.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Target profit (UGX)</label>
+                <Input
+                  type="number"
+                  value={draft.targetProfitUGX ?? ""}
+                  onChange={(event) =>
+                    updateDraft({ targetProfitUGX: toNumber(event.target.value) })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Target margin (bps) <span className="text-xs text-muted-foreground">%</span>
+                </label>
+                <Input
+                  type="number"
+                  value={draft.targetMarginBps ?? ""}
+                  onChange={(event) =>
+                    updateDraft({ targetMarginBps: toNumber(event.target.value) })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Pricing mode</label>
+                <select
+                  className="border rounded-md px-3 py-2 text-sm w-full"
+                  value={draft.pricingMode}
+                  onChange={(event) =>
+                    updateDraft({
+                      pricingMode: event.target.value as ProductCostingClient["pricingMode"],
+                    })
+                  }
+                >
+                  <option value="MARKUP">Markup</option>
+                  <option value="TARGET_PROFIT">Target profit</option>
+                  <option value="TARGET_MARGIN">Target margin</option>
+                  <option value="AUTO_RECOMMENDED">Auto recommended</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Selling price (UGX)</label>
+                <Input
+                  type="number"
+                  value={draft.userSellingPriceUGX ?? ""}
+                  onChange={(event) =>
+                    updateDraft({ userSellingPriceUGX: toNumber(event.target.value) })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <div>Markup price: UGX {formatNullable(pricing.markupPriceUGX)}</div>
+              <div>Target profit price: UGX {formatNullable(pricing.targetProfitPriceUGX)}</div>
+              <div>Target margin price: UGX {formatNullable(pricing.targetMarginPriceUGX)}</div>
+              <div className="font-medium text-foreground">
+                Auto recommended: UGX {formatNullable(pricing.autoRecommendedPriceUGX)}
+              </div>
+            </div>
+            {underpriced ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-700">
+                Selling price is below the recommended price.
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="flex flex-wrap justify-between gap-2">
+        <Button variant="outline" onClick={handleBack} disabled={stepIndex === 0}>
+          Back
+        </Button>
+        {stepIndex < steps.length - 1 ? (
+          <Button onClick={handleNext}>Next</Button>
+        ) : (
+          <Button onClick={handleSave} disabled={isPending}>
+            {isPending ? "Saving..." : "Save costing"}
           </Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2">Ingredient</th>
-                <th className="py-2">Qty</th>
-                <th className="py-2">Unit</th>
-                <th className="py-2">Unit cost (UGX)</th>
-                <th className="py-2">Line cost (UGX)</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {draft.ingredientLines.map((line, index) => {
-                const lineCost = computeIngredientLineCostUGX({
-                  qty: line.qty,
-                  unit: line.unit,
-                  unitCostUGX: line.unitCostUGX,
-                });
-
-                return (
-                  <tr key={line.id} className="border-t">
-                    <td className="py-2 pr-2">
-                      <Input
-                        value={line.name}
-                        onChange={(event) =>
-                          updateIngredient(index, { name: event.target.value }, draft, setDraft)
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-2">
-                      <Input
-                        type="number"
-                        value={line.qty}
-                        onChange={(event) =>
-                          updateIngredient(index, { qty: toNumber(event.target.value) ?? 0 }, draft, setDraft)
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-2">
-                      <select
-                        className="border rounded-md px-2 py-2 text-sm"
-                        value={line.unit}
-                        onChange={(event) =>
-                          updateIngredient(index, { unit: event.target.value as IngredientRow["unit"] }, draft, setDraft)
-                        }
-                      >
-                        <option value="g">g</option>
-                        <option value="kg">kg</option>
-                        <option value="ml">ml</option>
-                        <option value="l">l</option>
-                        <option value="pcs">pcs</option>
-                      </select>
-                    </td>
-                    <td className="py-2 pr-2">
-                      <Input
-                        type="number"
-                        value={line.unitCostUGX}
-                        onChange={(event) =>
-                          updateIngredient(
-                            index,
-                            { unitCostUGX: toNumber(event.target.value) ?? 0 },
-                            draft,
-                            setDraft
-                          )
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-2 text-sm">
-                      {lineCost.toLocaleString()}
-                    </td>
-                    <td className="py-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => removeIngredient(index, draft, setDraft)}
-                      >
-                        Remove
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="space-y-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Packaging</h2>
-          <Button
-            variant="secondary"
-            onClick={() =>
-              updateDraft({ packagingLines: [...draft.packagingLines, defaultPackaging()] })
-            }
-          >
-            Add packaging
-          </Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2">Packaging</th>
-                <th className="py-2">Cost (UGX)</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {draft.packagingLines.map((line, index) => (
-                <tr key={line.id} className="border-t">
-                  <td className="py-2 pr-2">
-                    <Input
-                      value={line.name}
-                      onChange={(event) =>
-                        updatePackaging(index, { name: event.target.value }, draft, setDraft)
-                      }
-                    />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <Input
-                      type="number"
-                      value={line.costUGX}
-                      onChange={(event) =>
-                        updatePackaging(
-                          index,
-                          { costUGX: toNumber(event.target.value) ?? 0 },
-                          draft,
-                          setDraft
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="py-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => removePackaging(index, draft, setDraft)}
-                    >
-                      Remove
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="space-y-3 rounded-lg border p-4">
-        <h2 className="text-lg font-semibold">Saved costings</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2">Name</th>
-                <th className="py-2">Total cost (UGX)</th>
-                <th className="py-2">Updated</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {costings.map((item) => (
-                <tr key={item.id} className="border-t">
-                  <td className="py-2 pr-2">{item.name}</td>
-                  <td className="py-2 pr-2">
-                    {typeof item.totalCostUGX === "number"
-                      ? item.totalCostUGX.toLocaleString()
-                      : "-"}
-                  </td>
-                  <td className="py-2 pr-2">{formatDate(item.updatedAt)}</td>
-                  <td className="py-2">
-                    <Button variant="ghost" onClick={() => selectCosting(item.id!)}>
-                      View
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {costings.length === 0 ? (
-                <tr>
-                  <td className="py-2 text-muted-foreground" colSpan={4}>
-                    No saved costings yet.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3 rounded-lg border p-4">
-          <h2 className="text-lg font-semibold">Totals</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>UGX {totals.subtotalUGX.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Overhead</span>
-              <span>UGX {totals.overheadUGX.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>Total cost</span>
-              <span>UGX {totals.totalCostUGX.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Cost per unit</span>
-              <span>
-                {totals.costPerUnitUGX ? `UGX ${totals.costPerUnitUGX.toLocaleString()}` : "-"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3 rounded-lg border p-4">
-          <h2 className="text-lg font-semibold">Pricing</h2>
-          <p className="text-xs text-muted-foreground">
-            Markup/Target Profit/Target Margin are alternative ways to price. Auto recommended
-            picks the highest valid price to avoid underpricing.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium">
-                Markup (bps) <span className="text-xs text-muted-foreground">%</span>
-              </label>
-              <Input
-                type="number"
-                value={draft.markupBps ?? ""}
-                onChange={(event) => updateDraft({ markupBps: toNumber(event.target.value) })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Target profit (UGX)</label>
-              <Input
-                type="number"
-                value={draft.targetProfitUGX ?? ""}
-                onChange={(event) =>
-                  updateDraft({ targetProfitUGX: toNumber(event.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">
-                Target margin (bps) <span className="text-xs text-muted-foreground">%</span>
-              </label>
-              <Input
-                type="number"
-                value={draft.targetMarginBps ?? ""}
-                onChange={(event) =>
-                  updateDraft({ targetMarginBps: toNumber(event.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Pricing mode</label>
-              <select
-                className="border rounded-md px-3 py-2 text-sm w-full"
-                value={draft.pricingMode}
-                onChange={(event) =>
-                  updateDraft({
-                    pricingMode: event.target.value as ProductCostingClient["pricingMode"],
-                  })
-                }
-              >
-                <option value="MARKUP">Markup</option>
-                <option value="TARGET_PROFIT">Target profit</option>
-                <option value="TARGET_MARGIN">Target margin</option>
-                <option value="AUTO_RECOMMENDED">Auto recommended</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Selling price (UGX)</label>
-              <Input
-                type="number"
-                value={draft.userSellingPriceUGX ?? ""}
-                onChange={(event) =>
-                  updateDraft({ userSellingPriceUGX: toNumber(event.target.value) })
-                }
-              />
-            </div>
-          </div>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <div>Markup price: UGX {formatNullable(pricing.markupPriceUGX)}</div>
-            <div>Target profit price: UGX {formatNullable(pricing.targetProfitPriceUGX)}</div>
-            <div>Target margin price: UGX {formatNullable(pricing.targetMarginPriceUGX)}</div>
-            <div className="font-medium text-foreground">
-              Auto recommended: UGX {formatNullable(pricing.autoRecommendedPriceUGX)}
-            </div>
-          </div>
-          {underpriced ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-700">
-              Selling price is below the recommended price.
-            </div>
-          ) : null}
-        </div>
+        )}
       </section>
     </div>
   );
@@ -780,14 +830,6 @@ function toNumber(value: string) {
 
 function formatNullable(value: number | null) {
   return typeof value === "number" ? value.toLocaleString() : "-";
-}
-
-function formatDate(value?: string) {
-  if (!value) {
-    return "-";
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
 }
 
 function toIngredientUnit(unit: string): IngredientUnit {

@@ -24,6 +24,12 @@ const navigationItems: SidebarItem[] = [
     type: "item",
   },
   {
+    name: "View Costings",
+    href: "/costing/view",
+    icon: ClipboardList,
+    type: "item",
+  },
+  {
     name: "Wedding Cakes",
     href: "/wedding-cakes",
     icon: CakeSlice,

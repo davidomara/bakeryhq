@@ -72,6 +72,7 @@ function SidebarContent(props: {
   onNavigate?: () => void;
   items: SidebarItem[];
   sidebarTop?: React.ReactNode;
+  sidebarBottom?: React.ReactNode;
   basePath: string;
 }) {
   const path = usePathname();
@@ -106,6 +107,10 @@ function SidebarContent(props: {
             );
           }
         })}
+
+        {props.sidebarBottom ? (
+          <div className="px-2 pt-4">{props.sidebarBottom}</div>
+        ) : null}
 
         <div className="flex-grow" />
       </div>
@@ -146,6 +151,7 @@ export default function SidebarLayout(props: {
   baseBreadcrumb?: HeaderBreadcrumbItem[];
   items: SidebarItem[];
   sidebarTop?: React.ReactNode;
+  sidebarBottom?: React.ReactNode;
   basePath: string;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -154,7 +160,12 @@ export default function SidebarLayout(props: {
   return (
     <div className="w-full flex">
       <div className="flex-col border-r w-[240px] h-screen sticky top-0 hidden md:flex">
-        <SidebarContent items={props.items} sidebarTop={props.sidebarTop} basePath={props.basePath} />
+        <SidebarContent
+          items={props.items}
+          sidebarTop={props.sidebarTop}
+          sidebarBottom={props.sidebarBottom}
+          basePath={props.basePath}
+        />
       </div>
       <div className="flex flex-col flex-grow w-0">
         <div className="h-14 border-b flex items-center justify-between sticky top-0 bg-white dark:bg-black z-10 px-4 md:px-6">
@@ -175,6 +186,7 @@ export default function SidebarLayout(props: {
                   onNavigate={() => setSidebarOpen(false)}
                   items={props.items}
                   sidebarTop={props.sidebarTop}
+                  sidebarBottom={props.sidebarBottom}
                   basePath={props.basePath}
                 />
               </SheetContent>

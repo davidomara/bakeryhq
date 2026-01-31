@@ -2,7 +2,7 @@
 
 import SidebarLayout, { SidebarItem } from "@/components/sidebar-layout";
 import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
-import { CakeSlice, ClipboardList, Eye, LineChart, Settings2 } from "lucide-react";
+import { CakeSlice, ClipboardList, Eye, LineChart, PlusSquare, Settings2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -48,6 +48,13 @@ const navigationItems: SidebarItem[] = [
     href: "/sales",
     icon: LineChart,
     type: "item",
+  },
+  {
+    name: "Add Sale",
+    href: "/sales/new",
+    icon: PlusSquare,
+    type: "item",
+    indent: true,
   },
   {
     type: "label",

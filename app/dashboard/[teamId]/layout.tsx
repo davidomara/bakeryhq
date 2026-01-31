@@ -2,7 +2,7 @@
 
 import SidebarLayout, { SidebarItem } from "@/components/sidebar-layout";
 import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
-import { CakeSlice, ClipboardList, LineChart, Settings2 } from "lucide-react";
+import { CakeSlice, ClipboardList, Eye, LineChart, Settings2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -26,14 +26,22 @@ const navigationItems: SidebarItem[] = [
   {
     name: "View Costings",
     href: "/costing/view",
-    icon: ClipboardList,
+    icon: Eye,
     type: "item",
+    indent: true,
   },
   {
     name: "Wedding Cakes",
     href: "/wedding-cakes",
     icon: CakeSlice,
     type: "item",
+  },
+  {
+    name: "View Wedding Costings",
+    href: "/wedding-cakes/view",
+    icon: Eye,
+    type: "item",
+    indent: true,
   },
   {
     name: "Sales Summary",

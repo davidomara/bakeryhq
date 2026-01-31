@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { computeRecommendedPriceUGX } from "@/lib/costing/calculations";
@@ -75,6 +75,8 @@ export function WeddingCakesPageClient({
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const steps = ["Client Details", "Tiers", "Extras", "Pricing & Quote"];
+  const [stepIndex, setStepIndex] = useState(0);
 
   const tierCosts = useMemo(() => {
     return draft.tiers.map((tier) => {
@@ -115,6 +117,7 @@ export function WeddingCakesPageClient({
 
   const selectCosting = (id: string | "new") => {
     setSelectedId(id);
+    setStepIndex(0);
     if (id === "new") {
       setDraft(emptyCosting());
       return;
@@ -129,8 +132,34 @@ export function WeddingCakesPageClient({
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const selected = params.get("selected");
+    if (!selected) {
+      return;
+    }
+    selectCosting(selected);
+  }, []);
+
   const updateDraft = (patch: Partial<WeddingCostingClient>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
+  };
+
+  const goToStep = (index: number) => {
+    if (index < 0 || index >= steps.length) {
+      return;
+    }
+    setStepIndex(index);
+  };
+
+  const handleNext = () => goToStep(stepIndex + 1);
+  const handleBack = () => goToStep(stepIndex - 1);
+
+  const canProceedFromStep = () => {
+    if (stepIndex === 1) {
+      return draft.tiers.some((tier) => tier.name.trim() !== "");
+    }
+    return true;
   };
 
   const handleSave = () => {
@@ -235,9 +264,6 @@ export function WeddingCakesPageClient({
               </option>
             ))}
           </select>
-          <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? "Saving..." : "Save"}
-          </Button>
           {draft.id ? (
             <Button asChild variant="outline">
               <a href={`/dashboard/${teamId}/wedding-cakes/export/${draft.id}`}>Download XLSX</a>
@@ -248,14 +274,46 @@ export function WeddingCakesPageClient({
 
       {errors.length > 0 ? (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {errors.map((error) => (
-            <div key={error}>{error}</div>
+          {errors.map((error, index) => (
+            <div key={`error-${index}`}>{error}</div>
           ))}
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3 rounded-lg border p-4">
+      <section className="rounded-lg border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">
+              Step {stepIndex + 1}: {steps[stepIndex]}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Complete each step to prepare a wedding quote.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {steps.map((label, index) => (
+              <div key={label} className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-1 text-xs ${
+                    index === stepIndex ? "bg-primary text-primary-foreground" : "bg-muted"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span className="text-muted-foreground">{label}</span>
+                {index < stepIndex ? (
+                  <Button variant="ghost" size="sm" onClick={() => goToStep(index)}>
+                    Edit
+                  </Button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {stepIndex === 0 ? (
+        <section className="space-y-3 rounded-lg border p-4">
           <h2 className="text-lg font-semibold">Client Details</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -282,287 +340,316 @@ export function WeddingCakesPageClient({
               />
             </div>
           </div>
-        </div>
+        </section>
+      ) : null}
 
-        <div className="space-y-3 rounded-lg border p-4">
-          <h2 className="text-lg font-semibold">Pricing</h2>
-          <p className="text-xs text-muted-foreground">
-            Choose markup, target profit, or target margin. Auto recommended shows the highest
-            valid price for quick quotes.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium">
-                Markup (bps) <span className="text-xs text-muted-foreground">%</span>
-              </label>
-              <Input
-                type="number"
-                value={draft.markupBps ?? ""}
-                onChange={(event) => updateDraft({ markupBps: toNumber(event.target.value) })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Target profit (UGX)</label>
-              <Input
-                type="number"
-                value={draft.targetProfitUGX ?? ""}
-                onChange={(event) =>
-                  updateDraft({ targetProfitUGX: toNumber(event.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">
-                Target margin (bps) <span className="text-xs text-muted-foreground">%</span>
-              </label>
-              <Input
-                type="number"
-                value={draft.targetMarginBps ?? ""}
-                onChange={(event) =>
-                  updateDraft({ targetMarginBps: toNumber(event.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Quoted price (UGX)</label>
-              <Input
-                type="number"
-                value={draft.userSellingPriceUGX ?? ""}
-                onChange={(event) =>
-                  updateDraft({ userSellingPriceUGX: toNumber(event.target.value) })
-                }
-              />
-            </div>
+      {stepIndex === 1 ? (
+        <section className="space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Tiers</h2>
+            <Button
+              variant="secondary"
+              onClick={() => updateDraft({ tiers: [...draft.tiers, defaultTier()] })}
+            >
+              Add tier
+            </Button>
           </div>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <div>Markup price: UGX {formatNullable(pricing.markupPriceUGX)}</div>
-            <div>Target profit price: UGX {formatNullable(pricing.targetProfitPriceUGX)}</div>
-            <div>Target margin price: UGX {formatNullable(pricing.targetMarginPriceUGX)}</div>
-            <div className="font-medium text-foreground">
-              Auto recommended: UGX {formatNullable(pricing.autoRecommendedPriceUGX)}</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2">Tier</th>
+                  <th className="py-2">Servings</th>
+                  <th className="py-2">Flavor</th>
+                  <th className="py-2">Cost source</th>
+                  <th className="py-2">Tier cost (UGX)</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {draft.tiers.map((tier, index) => {
+                  const tierCost = tierCosts[index] ?? 0;
+                  return (
+                    <tr key={tier.id} className="border-t">
+                      <td className="py-2 pr-2">
+                        <Input
+                          value={tier.name}
+                          onChange={(event) =>
+                            updateTier(index, { name: event.target.value }, draft, setDraft)
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <Input
+                          type="number"
+                          value={tier.servings ?? ""}
+                          onChange={(event) =>
+                            updateTier(
+                              index,
+                              { servings: toNumber(event.target.value) },
+                              draft,
+                              setDraft
+                            )
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <Input
+                          value={tier.flavor ?? ""}
+                          onChange={(event) =>
+                            updateTier(index, { flavor: event.target.value }, draft, setDraft)
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <select
+                          className="border rounded-md px-2 py-2 text-sm"
+                          value={tier.linkedProductCostingId ?? "manual"}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            updateTier(
+                              index,
+                              {
+                                linkedProductCostingId: value === "manual" ? null : value,
+                              },
+                              draft,
+                              setDraft
+                            );
+                          }}
+                        >
+                          <option value="manual">Manual cost</option>
+                          {productOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="py-2 pr-2">
+                        {tier.linkedProductCostingId ? (
+                          <div className="text-sm">{tierCost.toLocaleString()}</div>
+                        ) : (
+                          <Input
+                            type="number"
+                            value={tier.manualTierCostUGX ?? ""}
+                            onChange={(event) =>
+                              updateTier(
+                                index,
+                                { manualTierCostUGX: toNumber(event.target.value) },
+                                draft,
+                                setDraft
+                              )
+                            }
+                          />
+                        )}
+                      </td>
+                      <td className="py-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => removeTier(index, draft, setDraft)}
+                        >
+                          Remove
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          {underpriced ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-700">
-              Quoted price is below the recommended price.
-            </div>
-          ) : null}
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <section className="space-y-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Tiers</h2>
-          <Button
-            variant="secondary"
-            onClick={() => updateDraft({ tiers: [...draft.tiers, defaultTier()] })}
-          >
-            Add tier
-          </Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2">Tier</th>
-                <th className="py-2">Servings</th>
-                <th className="py-2">Flavor</th>
-                <th className="py-2">Cost source</th>
-                <th className="py-2">Tier cost (UGX)</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {draft.tiers.map((tier, index) => {
-                const tierCost = tierCosts[index] ?? 0;
-                return (
-                  <tr key={tier.id} className="border-t">
+      {stepIndex === 2 ? (
+        <section className="space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Extras</h2>
+            <Button
+              variant="secondary"
+              onClick={() => updateDraft({ extras: [...draft.extras, defaultExtra()] })}
+            >
+              Add extra
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2">Extra</th>
+                  <th className="py-2">Cost (UGX)</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {draft.extras.map((extra, index) => (
+                  <tr key={extra.id} className="border-t">
                     <td className="py-2 pr-2">
                       <Input
-                        value={tier.name}
+                        value={extra.name}
                         onChange={(event) =>
-                          updateTier(index, { name: event.target.value }, draft, setDraft)
+                          updateExtra(index, { name: event.target.value }, draft, setDraft)
                         }
                       />
                     </td>
                     <td className="py-2 pr-2">
                       <Input
                         type="number"
-                        value={tier.servings ?? ""}
+                        value={extra.costUGX}
                         onChange={(event) =>
-                          updateTier(index, { servings: toNumber(event.target.value) }, draft, setDraft)
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-2">
-                      <Input
-                        value={tier.flavor ?? ""}
-                        onChange={(event) =>
-                          updateTier(index, { flavor: event.target.value }, draft, setDraft)
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-2">
-                      <select
-                        className="border rounded-md px-2 py-2 text-sm"
-                        value={tier.linkedProductCostingId ?? "manual"}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          updateTier(
+                          updateExtra(
                             index,
-                            {
-                              linkedProductCostingId: value === "manual" ? null : value,
-                            },
+                            { costUGX: toNumber(event.target.value) ?? 0 },
                             draft,
                             setDraft
-                          );
-                        }}
-                      >
-                        <option value="manual">Manual cost</option>
-                        {productOptions.map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {option.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="py-2 pr-2">
-                      {tier.linkedProductCostingId ? (
-                        <div className="text-sm">{tierCost.toLocaleString()}</div>
-                      ) : (
-                        <Input
-                          type="number"
-                          value={tier.manualTierCostUGX ?? ""}
-                          onChange={(event) =>
-                            updateTier(
-                              index,
-                              { manualTierCostUGX: toNumber(event.target.value) },
-                              draft,
-                              setDraft
-                            )
-                          }
-                        />
-                      )}
+                          )
+                        }
+                      />
                     </td>
                     <td className="py-2">
-                      <Button variant="ghost" onClick={() => removeTier(index, draft, setDraft)}>
+                      <Button
+                        variant="ghost"
+                        onClick={() => removeExtra(index, draft, setDraft)}
+                      >
                         Remove
                       </Button>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
-      <section className="space-y-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Extras</h2>
+      {stepIndex === 3 ? (
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3 rounded-lg border p-4">
+            <h2 className="text-lg font-semibold">Pricing</h2>
+            <p className="text-xs text-muted-foreground">
+              Choose markup, target profit, or target margin. Auto recommended shows the highest
+              valid price for quick quotes.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium">
+                  Markup (bps) <span className="text-xs text-muted-foreground">%</span>
+                </label>
+                <Input
+                  type="number"
+                  value={draft.markupBps ?? ""}
+                  onChange={(event) => updateDraft({ markupBps: toNumber(event.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Target profit (UGX)</label>
+                <Input
+                  type="number"
+                  value={draft.targetProfitUGX ?? ""}
+                  onChange={(event) =>
+                    updateDraft({ targetProfitUGX: toNumber(event.target.value) })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Target margin (bps) <span className="text-xs text-muted-foreground">%</span>
+                </label>
+                <Input
+                  type="number"
+                  value={draft.targetMarginBps ?? ""}
+                  onChange={(event) =>
+                    updateDraft({ targetMarginBps: toNumber(event.target.value) })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Quoted price (UGX)</label>
+                <Input
+                  type="number"
+                  value={draft.userSellingPriceUGX ?? ""}
+                  onChange={(event) =>
+                    updateDraft({ userSellingPriceUGX: toNumber(event.target.value) })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <div>Markup price: UGX {formatNullable(pricing.markupPriceUGX)}</div>
+              <div>Target profit price: UGX {formatNullable(pricing.targetProfitPriceUGX)}</div>
+              <div>Target margin price: UGX {formatNullable(pricing.targetMarginPriceUGX)}</div>
+              <div className="font-medium text-foreground">
+                Auto recommended: UGX {formatNullable(pricing.autoRecommendedPriceUGX)}</div>
+            </div>
+            {underpriced ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-700">
+                Quoted price is below the recommended price.
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Quote view</h2>
+              <Button variant="secondary" onClick={() => window.print()}>
+                Print quote
+              </Button>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Client</span>
+                <span>{draft.clientName || "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Event date</span>
+                <span>{draft.eventDate || "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total servings</span>
+                <span>{totals.totalServings || "-"}</span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>Recommended price</span>
+                <span>UGX {formatNullable(pricing.autoRecommendedPriceUGX)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total cost</span>
+                <span>UGX {totals.totalCostUGX.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Cost per serving</span>
+                <span>
+                  {totals.costPerServingUGX
+                    ? `UGX ${totals.costPerServingUGX.toLocaleString()}`
+                    : "-"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="flex flex-wrap justify-between gap-2">
+        <Button variant="outline" onClick={handleBack} disabled={stepIndex === 0}>
+          Back
+        </Button>
+        {stepIndex < steps.length - 1 ? (
           <Button
-            variant="secondary"
-            onClick={() => updateDraft({ extras: [...draft.extras, defaultExtra()] })}
+            onClick={() => {
+              if (!canProceedFromStep()) {
+                setErrors(["Add at least one tier name before continuing."]);
+                return;
+              }
+              setErrors([]);
+              handleNext();
+            }}
           >
-            Add extra
+            Next
           </Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2">Extra</th>
-                <th className="py-2">Cost (UGX)</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {draft.extras.map((extra, index) => (
-                <tr key={extra.id} className="border-t">
-                  <td className="py-2 pr-2">
-                    <Input
-                      value={extra.name}
-                      onChange={(event) =>
-                        updateExtra(index, { name: event.target.value }, draft, setDraft)
-                      }
-                    />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <Input
-                      type="number"
-                      value={extra.costUGX}
-                      onChange={(event) =>
-                        updateExtra(
-                          index,
-                          { costUGX: toNumber(event.target.value) ?? 0 },
-                          draft,
-                          setDraft
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="py-2">
-                    <Button variant="ghost" onClick={() => removeExtra(index, draft, setDraft)}>
-                      Remove
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3 rounded-lg border p-4">
-          <h2 className="text-lg font-semibold">Totals</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Tiers total</span>
-              <span>UGX {totals.tiersTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Extras total</span>
-              <span>UGX {totals.extrasTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>Total cost</span>
-              <span>UGX {totals.totalCostUGX.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Cost per serving</span>
-              <span>
-                {totals.costPerServingUGX ? `UGX ${totals.costPerServingUGX.toLocaleString()}` : "-"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3 rounded-lg border p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Quote view</h2>
-            <Button variant="secondary" onClick={() => window.print()}>
-              Print quote
-            </Button>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Client</span>
-              <span>{draft.clientName || "-"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Event date</span>
-              <span>{draft.eventDate || "-"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total servings</span>
-              <span>{totals.totalServings || "-"}</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>Recommended price</span>
-              <span>UGX {formatNullable(pricing.autoRecommendedPriceUGX)}</span>
-            </div>
-          </div>
-        </div>
+        ) : (
+          <Button onClick={handleSave} disabled={isPending}>
+            {isPending ? "Saving..." : "Save costing"}
+          </Button>
+        )}
       </section>
     </div>
   );

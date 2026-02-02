@@ -12,6 +12,8 @@ import { Graph } from "./graph";
 import { prisma } from "@/lib/db/prisma";
 import { requireTeamContext } from "@/lib/auth/team";
 import { computeMarginBps } from "@/lib/costing/calculations";
+import { stackServerApp } from "@/stack";
+import { JoinTeamClient } from "@/app/dashboard/[teamId]/join/join-team-client";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -24,7 +26,24 @@ export default async function DashboardPage({
   params: Promise<{ teamId: string }>;
 }) {
   const { teamId } = await params;
-  await requireTeamContext(teamId);
+  try {
+    await requireTeamContext(teamId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "Team membership required.") {
+      const user = await stackServerApp.getUser({ or: "throw" });
+      const team = await user.getTeam(teamId);
+      if (!team) {
+        throw new Error("Team access denied.");
+      }
+      const teamName =
+        (team as { displayName?: string; name?: string }).displayName ??
+        (team as { name?: string }).name ??
+        "this team";
+      return <JoinTeamClient teamId={teamId} teamName={teamName} />;
+    }
+    throw error;
+  }
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

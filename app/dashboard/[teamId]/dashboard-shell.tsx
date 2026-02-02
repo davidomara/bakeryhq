@@ -66,6 +66,12 @@ const navigationItems: SidebarItem[] = [
     icon: Settings2,
     type: "item",
   },
+  {
+    name: "User Manual",
+    href: "/manual",
+    icon: BookOpenText,
+    type: "item",
+  },
 ];
 
 export default function DashboardShell({

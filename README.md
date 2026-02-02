@@ -12,6 +12,10 @@ A production-ready bakery costing and profit tracking app built on the Stack Aut
 
 ## Getting Started
 
+## User Manual
+
+See `user-manual.md` for the full quickstart and feature reference.
+
 1. Clone the repository
 
     ```bash

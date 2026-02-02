@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { stackServerApp } from "../stack";
 import "./globals.css";
 import { Provider } from "./provider";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
             <StackTheme>{children}</StackTheme>
           </StackProvider>
         </Provider>
+        <Analytics />
       </body>
     </html>
   );

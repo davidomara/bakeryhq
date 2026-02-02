@@ -1,104 +1,35 @@
-'use client';
+import { requireTeamContext } from "@/lib/auth/team";
+import { stackServerApp } from "@/stack";
+import { JoinTeamClient } from "@/app/dashboard/[teamId]/join/join-team-client";
+import DashboardShell from "@/app/dashboard/[teamId]/dashboard-shell";
 
-import SidebarLayout, { SidebarItem } from "@/components/sidebar-layout";
-import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
-import { CakeSlice, ClipboardList, Eye, LineChart, PlusSquare, Settings2 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ teamId: string }>;
+}) {
+  const { teamId } = await params;
 
-const navigationItems: SidebarItem[] = [
-  {
-    name: "Overview",
-    href: "/",
-    icon: LineChart,
-    type: "item",
-  },
-  {
-    type: "label",
-    name: "Costing",
-  },
-  {
-    name: "Product Costing",
-    href: "/costing",
-    icon: ClipboardList,
-    type: "item",
-  },
-  {
-    name: "View Costings",
-    href: "/costing/view",
-    icon: Eye,
-    type: "item",
-    indent: true,
-  },
-  {
-    name: "Wedding Cakes",
-    href: "/wedding-cakes",
-    icon: CakeSlice,
-    type: "item",
-  },
-  {
-    name: "View Wedding Costings",
-    href: "/wedding-cakes/view",
-    icon: Eye,
-    type: "item",
-    indent: true,
-  },
-  {
-    name: "Sales Summary",
-    href: "/sales",
-    icon: LineChart,
-    type: "item",
-  },
-  {
-    name: "Add Sale",
-    href: "/sales/new",
-    icon: PlusSquare,
-    type: "item",
-    indent: true,
-  },
-  {
-    type: "label",
-    name: "Settings",
-  },
-  {
-    name: "Bakery Settings",
-    href: "/settings",
-    icon: Settings2,
-    type: "item",
-  },
-];
-
-export default function Layout(props: { children: React.ReactNode }) {
-  const params = useParams<{ teamId: string }>();
-  const user = useUser({ or: 'redirect' });
-  const teams = user.useTeams();
-  const team = user.useTeam(params.teamId);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (teams.length > 0 && !team) {
-      router.push('/dashboard');
+  try {
+    await requireTeamContext(teamId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "Team membership required.") {
+      const user = await stackServerApp.getUser({ or: "throw" });
+      const team = await user.getTeam(teamId);
+      if (!team) {
+        throw new Error("Team access denied.");
+      }
+      const teamName =
+        (team as { displayName?: string; name?: string }).displayName ??
+        (team as { name?: string }).name ??
+        "this team";
+      return <JoinTeamClient teamId={teamId} teamName={teamName} />;
     }
-  }, [teams.length, team, router]);
-
-  if (!team) {
-    return null;
+    throw error;
   }
 
-  return (
-    <SidebarLayout 
-      items={navigationItems}
-      basePath={`/dashboard/${team.id}`}
-      sidebarTop={<SelectedTeamSwitcher 
-        selectedTeam={team}
-        urlMap={(team) => `/dashboard/${team.id}`}
-      />}
-      baseBreadcrumb={[{
-        title: team.displayName,
-        href: `/dashboard/${team.id}`,
-      }]}
-    >
-      {props.children}
-    </SidebarLayout>
-  );
+  return <DashboardShell teamId={teamId}>{children}</DashboardShell>;
 }

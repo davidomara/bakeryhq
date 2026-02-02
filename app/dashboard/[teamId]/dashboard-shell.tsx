@@ -2,15 +2,7 @@
 
 import SidebarLayout, { SidebarItem } from "@/components/sidebar-layout";
 import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
-import {
-  BookOpenText,
-  CakeSlice,
-  ClipboardList,
-  Eye,
-  LineChart,
-  PlusSquare,
-  Settings2,
-} from "lucide-react";
+import { CakeSlice, ClipboardList, Eye, LineChart, PlusSquare, Settings2 } from "lucide-react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -72,12 +64,6 @@ const navigationItems: SidebarItem[] = [
     name: "Bakery Settings",
     href: "/settings",
     icon: Settings2,
-    type: "item",
-  },
-  {
-    name: "User Manual",
-    href: "/manual",
-    icon: BookOpenText,
     type: "item",
   },
 ];

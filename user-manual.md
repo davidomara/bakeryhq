@@ -1,133 +1,113 @@
 # BakeryHQ User Manual
 
-## Overview
-
-BakeryHQ is a costing and profitability system for bakery teams. It helps you:
-- Price products accurately
-- Track monthly profit
-- Produce client-ready wedding cake quotes
-- Keep each team’s data isolated and secure
-
-This manual is written for both **staff** and **owners/admins**.
-
----
+This guide covers daily use for staff and setup/administration for owners and admins. It includes a quickstart and a feature reference.
 
 ## Quickstart (Everyone)
 
-### 1) Sign in and select your team
-- If you see **Join team**, click it once to create your membership.
+1) Sign in and select your team.
+- If you see **“Join team”**, click it once to create your membership.
 
-### 2) Create a Product Costing
+2) Create a Product Costing
 - Go to **Product Costing**.
-- Complete the flow: **Ingredients → Packaging → Labor → Overhead → Pricing → Review & Save**.
+- Follow the step-by-step flow: Ingredients → Packaging → Labor → Overhead → Pricing → Review & Save.
 - Click **Save** on the final step.
 
-### 3) Create a Wedding Cake Costing
+3) Create a Wedding Cake Costing
 - Go to **Wedding Cakes**.
-- Add at least one tier, then continue to **Extras → Pricing → Quote → Save**.
+- Add at least one tier, then proceed through Extras → Pricing → Quote → Save.
 
-### 4) Log a Sale
-- Go to **Sales Summary** for rollups.
-- Go to **Add Sale** to record a sale.
+4) Log a Sale
+- Go to **Sales Summary** to view rollups and logs.
+- Go to **Add Sale** (sub‑item under Sales Summary) to add a sale.
 
-### 5) Export to Excel
-- Product costing: open a saved costing → **Download XLSX**.
-- Wedding costing: open a saved wedding costing → **Download XLSX**.
-- Sales summary: apply filters → **Download XLSX**.
-
----
+5) Export to Excel
+- Product costing: open a saved costing and click **Download XLSX**.
+- Wedding costing: open a saved wedding costing and click **Download XLSX**.
+- Sales summary: use filters then click **Download XLSX**.
 
 ## Roles & Access
 
 BakeryHQ uses Stack Auth teams for tenancy. Your account must be a team member to access data.
 
-| Role | Access |
-| --- | --- |
-| Owner/Admin | Full access to settings, costing, sales, exports |
-| Staff | Costing + sales access as assigned |
+- **Owner/Admin**: Full access to settings, costing, sales, and exports.
+- **Staff**: Access to costing and sales, as assigned by your team.
 
 If you cannot access a team, ask an Owner/Admin to add you.
-
----
 
 ## Product Costing (Single Product)
 
 ### Purpose
-Build a full cost breakdown and recommended selling price.
+Calculate accurate product cost and suggested pricing using ingredients, packaging, labor, and overhead.
 
 ### Steps
-**Ingredients**
-- Add each ingredient line with quantity + unit.
-- Units supported: **g, kg, ml, l, pcs**.
-- Costs are stored as **UGX integers** (no decimals).
+1) **Ingredients**
+   - Add each ingredient line with quantity and unit.
+   - Units supported: g, kg, ml, l, pcs.
+   - Costs are stored in UGX integers (no decimals).
 
-**Packaging**
-- Add boxes, labels, boards, and other packaging costs.
+2) **Packaging**
+   - Add boxes, labels, boards, or other packaging costs.
 
-**Labor**
-- Enter hours and hourly rate.
+3) **Labor**
+   - Enter hours and rate per hour.
 
-**Overhead**
-- Choose **flat UGX** or **% of subtotal**.
+4) **Overhead**
+   - Choose flat UGX or % of subtotal.
 
-**Pricing**
-- Inputs (use one or more):
-  - **Markup (bps)**: 1000 = 10%
-  - **Target Profit (UGX)**
-  - **Target Margin (bps)**
-- **Auto recommended** chooses the highest valid price to avoid underpricing.
+5) **Pricing**
+   - Choose one or more inputs:
+     - **Markup (bps)**: 1000 = 10%
+     - **Target Profit (UGX)**
+     - **Target Margin (bps)**
+   - **Auto recommended** picks the highest valid price to avoid underpricing.
 
-**Review & Save**
-- Confirm totals, then save the costing.
+6) **Review & Save**
+   - Confirm totals and save the costing.
 
 ### Tips
 - Use **View Costings** to search and reopen saved costings.
-- Select a costing to edit it.
+- Selecting a costing opens it for editing.
 - Use **Duplicate** to copy an existing costing.
-
----
 
 ## Wedding Cake Costing
 
 ### Purpose
-Cost multi‑tier cakes using linked product costings or manual tier costs.
+Cost multi-tier cakes using linked product costings or manual tier costs.
 
 ### Steps
-**Client Details**
-- Client name, event date, notes.
+1) **Client Details**
+   - Client name, event date, notes.
 
-**Tiers**
-- Add at least one tier.
-- Link to a product costing or enter manual tier cost.
+2) **Tiers**
+   - Add at least one tier.
+   - Link to a product costing or enter manual tier cost.
 
-**Extras**
-- Add delivery, topper, flowers, stand, etc.
+3) **Extras**
+   - Add delivery, topper, flowers, stand, etc.
 
-**Pricing & Quote**
-- Same pricing logic as product costing.
-- Review totals and save.
+4) **Pricing & Quote**
+   - Use the same pricing logic as product costing.
+   - Review totals and save.
 
 ### Tips
 - Use **View Wedding Costings** to search and reopen saved orders.
-- Use **Quote View** for print‑friendly sharing.
-
----
+- Use **Quote View** for print-friendly sharing.
 
 ## Sales Summary (Monthly Profit)
 
 ### Purpose
-Track revenue, COGS, and profit by month.
+Track revenue, cost of goods, and profit by month.
 
 ### How to use
-**Add Sale**
-- Go to **Add Sale** in the sidebar.
-- Choose a product to auto‑fill name and cost.
-- Enter units sold + selling price.
-- Save.
+1) **Add Sale**
+   - Go to **Add Sale** in the sidebar.
+   - Choose a product to auto-fill name and cost.
+   - Enter units sold and selling price.
+   - Save the sale.
 
-**Sales Summary**
-- Filter by date range, product, or channel.
-- Review monthly rollups and sales log.
+2) **Sales Summary**
+   - Filter by date range, product, or channel.
+   - Review monthly rollups and the sales log.
 
 ### Calculations
 - **Revenue** = units × selling price
@@ -135,48 +115,40 @@ Track revenue, COGS, and profit by month.
 - **Profit** = revenue − COGS
 - **Margin (bps)** = profit ÷ revenue
 
----
-
 ## Settings
 
 ### Bakery Settings
 Owners/Admins can set:
 - Bakery name
 - Default currency (UGX)
-- Default markup and overhead rules
-
----
+- Default markup / overhead rules
 
 ## Exports (XLSX)
 
-Exports include:
+Available exports:
 - Product Costing
 - Wedding Cake Costing
 - Monthly Profit Summary
 
-All exports use **computed values** (no formulas).
-
----
+Exports include **computed values** instead of formulas for reliability.
 
 ## Troubleshooting
 
-**Team membership required**
+**“Team membership required.”**
 - Click **Join team** or ask an admin to add you.
 
 **Slow first load**
-- First visit compiles routes and may take a few seconds.
+- The first visit compiles routes and may take a few seconds.
 
 **Prices look wrong**
-- Check units (g vs kg, ml vs l) and ensure costs are UGX integers.
+- Check units (g vs kg, ml vs l) and ensure costs are in UGX integers.
 
 **Build or server errors**
-- Confirm `DATABASE_URL` is set in your environment (local or Vercel).
-
----
+- Confirm `DATABASE_URL` is set correctly in your environment (local or Vercel).
 
 ## Glossary
 
-- **UGX**: Ugandan Shilling
-- **BPS**: Basis points (1% = 100 bps)
-- **COGS**: Cost of Goods Sold
-- **Margin**: Profit ÷ Revenue
+- **UGX**: Ugandan Shilling.
+- **BPS (basis points)**: 1% = 100 bps. Example: 2500 bps = 25%.
+- **COGS**: Cost of Goods Sold.
+- **Margin**: Profit ÷ Revenue.
